@@ -1,9 +1,10 @@
-// `mort watch` — the primary command. Starts the enabled sensors and, when a TTY
-// is present, mounts the live Ink dashboard. `--headless` runs sensors only (no
-// UI), and `--demo` replays a bundled incident so you can try postmortem with zero
-// config. (The web dashboard on :6660 and the incident pipeline arrive in later
-// sessions; this is the vertical slice that makes `mort` runnable today.)
+// `mort watch` — the primary command and the daemon. Real mode acquires the
+// single-instance lock, opens the db, starts the sensors, runs the incident
+// pipeline, and serves the web dashboard + webhook receiver on 127.0.0.1:6660.
+// With a TTY it also mounts the live Ink dashboard; `--headless` skips the UI.
+// `--demo` replays a bundled incident (ephemeral: no lock, no db, no server).
 
+import type { FastifyInstance } from "fastify";
 import { render } from "ink";
 import { type ReactElement, useEffect, useState } from "react";
 import { Brain } from "../brain/index.js";
@@ -19,10 +20,11 @@ import { Dashboard } from "../outputs/terminal/components/Dashboard.js";
 import type { BrainStatus, IncidentView } from "../outputs/terminal/types.js";
 import { DemoSensor } from "../sensors/demo/index.js";
 import { createSensorRegistry, type SensorHealth, SensorRegistry } from "../sensors/index.js";
+import { SERVER_HOST, SERVER_PORT, startServer } from "../server/index.js";
 import { VERSION } from "../version.js";
 
-/** Port the daemon reserves (the web dashboard binds it in Session 9). */
-const DAEMON_PORT = 6660;
+/** Port the daemon reserves and the dashboard/webhook server binds. */
+const DAEMON_PORT = SERVER_PORT;
 
 const log = createLogger("watch");
 
@@ -145,12 +147,33 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
   const sensorsConfig = demo ? { demo: { enabled: true } } : config.sensors;
   await registry.startAll(sensorsConfig);
 
+  // The one Fastify server: dashboard + JSON API + SSE + webhook receiver (real
+  // mode only). Demo mode stays ephemeral with no bound port.
+  let server: FastifyInstance | null = null;
+  if (!demo && db) {
+    const wh = config.sensors.webhook;
+    server = await startServer(
+      {
+        db,
+        version: VERSION,
+        brain: { kind: brain.kind, model: config.brain.model },
+        getSensors: () => registry.getHealth(),
+        startedAt: Date.now(),
+        webhookSecret: wh.enabled
+          ? wh.secret || process.env.POSTMORTEM_WEBHOOK_SECRET || undefined
+          : undefined,
+      },
+      DAEMON_PORT,
+    );
+  }
+
   let shuttingDown = false;
   const shutdown = async () => {
     if (shuttingDown) return;
     shuttingDown = true;
     detachPipeline?.();
     await registry.stopAll();
+    if (server) await server.close();
     detachPersistence?.();
     if (db) await closeDb(db);
     if (locked) releaseLock();
@@ -160,6 +183,7 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
   if (options.headless || !process.stdout.isTTY) {
     log.info(`postmortem watching (headless)${demo ? " · demo" : ""}`);
     process.stdout.write("☠ postmortem is watching (headless). ctrl+c to stop.\n");
+    if (server) process.stdout.write(`  dashboard → http://${SERVER_HOST}:${SERVER_PORT}\n`);
     const onSignal = () => void shutdown().then(() => process.exit(0));
     process.on("SIGINT", onSignal);
     process.on("SIGTERM", onSignal);

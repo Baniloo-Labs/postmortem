@@ -23,6 +23,35 @@ export interface SensorHealthResult {
   message: string;
 }
 
+/**
+ * The one place events enter the bus. Stamps id/timestamp, redacts secrets
+ * (raw/summary/metadata/payload), and Zod-validates. An invalid event is dropped
+ * and logged, never thrown — publishers run inside async callbacks (sensors, the
+ * webhook route) where a throw would go unhandled. Shared by BaseSensor.emit and
+ * the webhook receiver so neither can bypass redaction or validation.
+ */
+export function publishEvent(event: SensorEvent): void {
+  const candidate: NormalizedEvent = {
+    ...event,
+    id: randomUUID(),
+    timestamp: new Date().toISOString(),
+    raw: redact(event.raw),
+    summary: redact(event.summary),
+    metadata: redactDeep(event.metadata),
+    payload: redactDeep(event.payload),
+  };
+
+  const result = safeParseEvent(candidate);
+  if (!result.success) {
+    log.error(`${event.source}: dropped invalid event`, {
+      type: event.type,
+      issues: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+    });
+    return;
+  }
+  bus.publish(result.data);
+}
+
 export abstract class BaseSensor {
   abstract readonly name: string;
   abstract readonly displayName: string;
@@ -31,30 +60,7 @@ export abstract class BaseSensor {
   abstract stop(): Promise<void>;
   abstract healthCheck(): Promise<SensorHealthResult>;
 
-  /**
-   * Publish an event. Stamps id/timestamp, redacts secrets, validates. An invalid
-   * event is dropped (logged), not thrown — emit runs inside async watcher/poll
-   * callbacks where a throw would go unhandled.
-   */
   protected emit(event: SensorEvent): void {
-    const candidate: NormalizedEvent = {
-      ...event,
-      id: randomUUID(),
-      timestamp: new Date().toISOString(),
-      raw: redact(event.raw),
-      summary: redact(event.summary),
-      metadata: redactDeep(event.metadata),
-      payload: redactDeep(event.payload),
-    };
-
-    const result = safeParseEvent(candidate);
-    if (!result.success) {
-      log.error(`${this.name}: dropped invalid event`, {
-        type: event.type,
-        issues: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
-      });
-      return;
-    }
-    bus.publish(result.data);
+    publishEvent(event);
   }
 }

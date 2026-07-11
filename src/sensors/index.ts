@@ -9,7 +9,6 @@ import { GitHubActionsSensor } from "./github-actions/index.js";
 import { HealthCheckSensor } from "./health-check/index.js";
 import { LogfileSensor } from "./logfile/index.js";
 import { VercelSensor } from "./vercel/index.js";
-import { WebhookSensor } from "./webhook/index.js";
 
 const log = createLogger("sensors");
 
@@ -94,15 +93,15 @@ export class SensorRegistry {
   }
 }
 
-/** The registry with all v1.0 sensors registered. */
+// Webhooks are received by the shared Fastify server (src/server/), not a sensor.
+/** The registry with all v1.0 polling/watching sensors registered. */
 export function createSensorRegistry(): SensorRegistry {
   return new SensorRegistry()
     .register(new GitSensor())
     .register(new LogfileSensor())
     .register(new VercelSensor())
     .register(new GitHubActionsSensor())
-    .register(new HealthCheckSensor())
-    .register(new WebhookSensor());
+    .register(new HealthCheckSensor());
 }
 
 export type { SensorEvent, SensorHealthResult } from "./base.js";

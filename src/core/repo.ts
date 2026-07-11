@@ -172,6 +172,27 @@ export async function listIncidents(db: DB, filter: HistoryFilter = {}): Promise
   return query.execute();
 }
 
+export interface IncidentDetail extends IncidentRow {
+  timeline: unknown;
+  event_ids: unknown;
+}
+
+/** A single incident with its parsed timeline/event ids, or null. */
+export async function getIncident(db: DB, id: string): Promise<IncidentDetail | null> {
+  const row = await db.selectFrom("incidents").selectAll().where("id", "=", id).executeTakeFirst();
+  if (!row) return null;
+  return { ...row, timeline: parseJson(row.timeline), event_ids: parseJson(row.event_ids) };
+}
+
+function parseJson(text: string | null): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 /** Recent incidents as the lightweight shape the brain's prompts consume. */
 export async function recentIncidentSummaries(
   db: DB,
