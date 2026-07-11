@@ -105,10 +105,36 @@ export function redact(text: string): string {
   return out;
 }
 
+// Sensitive object-key names. A string value under one of these keys is redacted
+// regardless of its content — many real tokens (Vercel, Netlify, session ids) are
+// opaque and wouldn't match any value pattern.
+const SENSITIVE_KEY_WORDS = [
+  "token",
+  "secret",
+  "password",
+  "passwd",
+  "pwd",
+  "apikey",
+  "accesstoken",
+  "refreshtoken",
+  "authtoken",
+  "credential",
+  "credentials",
+  "privatekey",
+  "clientsecret",
+  "sessionid",
+] as const;
+
+function isSensitiveKey(key: string): boolean {
+  const normalized = key.toLowerCase().replace(/[^a-z]/g, "");
+  return SENSITIVE_KEY_WORDS.some((word) => normalized === word || normalized.endsWith(word));
+}
+
 /**
- * Deep-redact any JSON-ish value: strings are scrubbed, objects/arrays walked.
+ * Deep-redact any JSON-ish value: string leaves are scrubbed for value patterns,
+ * and a string under a sensitive key name is redacted wholesale. Objects/arrays
+ * are walked. Non-string leaves (numbers, booleans, null) pass through untouched.
  * Used on sensor `payload`/`metadata` (arbitrary structured data) before persist.
- * Non-string leaves (numbers, booleans, null) pass through untouched.
  */
 export function redactDeep<T>(value: T): T {
   if (typeof value === "string") {
@@ -120,7 +146,7 @@ export function redactDeep<T>(value: T): T {
   if (value !== null && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
-      out[k] = redactDeep(v);
+      out[k] = typeof v === "string" && isSensitiveKey(k) ? PLACEHOLDER : redactDeep(v);
     }
     return out as T;
   }

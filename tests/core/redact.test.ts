@@ -76,4 +76,25 @@ describe("redactDeep", () => {
     expect(out.healthy).toBe(true);
     expect(out.nothing).toBeNull();
   });
+
+  it("redacts opaque values under a sensitive key name", () => {
+    const out = redactDeep({
+      access_token: "opaque-value-no-recognizable-format",
+      client_secret: "another-opaque-one",
+      apiKey: "xyz789plain",
+      note: "harmless",
+      count: 5,
+    });
+    expect(out.access_token).toBe("[REDACTED]");
+    expect(out.client_secret).toBe("[REDACTED]");
+    expect(out.apiKey).toBe("[REDACTED]");
+    expect(out.note).toBe("harmless");
+    expect(out.count).toBe(5);
+  });
+
+  it("does not over-redact innocent keys that merely contain a substring", () => {
+    const out = redactDeep({ monkey: "banana", tokenize: "step" });
+    expect(out.monkey).toBe("banana");
+    expect(out.tokenize).toBe("step");
+  });
 });
