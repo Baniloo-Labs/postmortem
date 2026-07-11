@@ -8,6 +8,7 @@ import { Command } from "commander";
 import { configCommand } from "./commands/config.js";
 import { historyCommand } from "./commands/history.js";
 import { hooksCommand } from "./commands/hooks.js";
+import { incidentCommand } from "./commands/incident.js";
 import { predictCommand } from "./commands/predict.js";
 import { setupCommand } from "./commands/setup.js";
 import { statusCommand } from "./commands/status.js";
@@ -51,6 +52,14 @@ program
   .option("--severity <level>", "filter by severity (info|warning|error|critical)")
   .action(async (opts: { last?: string; severity?: string }) => {
     await historyCommand(opts);
+  });
+
+program
+  .command("incident")
+  .description("analyze recent events into an incident")
+  .option("--last <window>", "how far back to analyze, e.g. 10m, 1h", "10m")
+  .action(async (opts: { last?: string }) => {
+    process.exit(await incidentCommand(opts));
   });
 
 program

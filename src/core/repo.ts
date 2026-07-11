@@ -71,6 +71,36 @@ export async function recentEvents(db: DB, limit = 20): Promise<StoredEvent[]> {
     .execute();
 }
 
+/** Full events since a cutoff (chronological), reconstructed as NormalizedEvents. */
+export async function getEventsSince(db: DB, sinceIso: string): Promise<NormalizedEvent[]> {
+  const rows = await db
+    .selectFrom("events")
+    .selectAll()
+    .where("timestamp", ">=", sinceIso)
+    .orderBy("timestamp", "asc")
+    .execute();
+
+  return rows.map((r) => ({
+    id: r.id,
+    timestamp: r.timestamp,
+    source: r.source,
+    type: r.type as NormalizedEvent["type"],
+    severity: r.severity as NormalizedEvent["severity"],
+    raw: r.raw,
+    summary: r.summary,
+    metadata: safeJson(r.metadata) as NormalizedEvent["metadata"],
+    payload: safeJson(r.payload) as NormalizedEvent["payload"],
+  }));
+}
+
+function safeJson(text: string): Record<string, unknown> {
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 // ─── Incidents ──────────────────────────────────────────────────────────────
 
 export interface IncidentRow {

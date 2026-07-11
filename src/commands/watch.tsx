@@ -8,12 +8,13 @@ import { render } from "ink";
 import { type ReactElement, useEffect, useState } from "react";
 import { Brain } from "../brain/index.js";
 import { bus } from "../core/bus.js";
-import { loadConfig } from "../core/config.js";
+import { loadConfig, reportsDirFor } from "../core/config.js";
 import { closeDb, type DB, migrateToLatest, openDb } from "../core/db.js";
 import type { NormalizedEvent } from "../core/event.js";
 import { acquireLock, LockHeldError, releaseLock } from "../core/lock.js";
 import { createLogger } from "../core/logger.js";
 import { attachEventPersistence } from "../core/repo.js";
+import { IncidentPipeline } from "../incidents/pipeline.js";
 import { Dashboard } from "../outputs/terminal/components/Dashboard.js";
 import type { BrainStatus, IncidentView } from "../outputs/terminal/types.js";
 import { DemoSensor } from "../sensors/demo/index.js";
@@ -51,13 +52,15 @@ const DEMO_INCIDENT: IncidentView = {
   reportPath: "~/.postmortem/reports/demo.md",
 };
 
+type SubscribeIncidents = (cb: (view: IncidentView) => void) => () => void;
+
 interface WatchAppProps {
   brain: BrainStatus;
   registry: SensorRegistry;
-  demo: boolean;
+  subscribeIncidents: SubscribeIncidents;
 }
 
-function WatchApp({ brain, registry, demo }: WatchAppProps): ReactElement {
+function WatchApp({ brain, registry, subscribeIncidents }: WatchAppProps): ReactElement {
   const [events, setEvents] = useState<NormalizedEvent[]>([]);
   const [sensors, setSensors] = useState<SensorHealth[]>(registry.getHealth());
   const [incident, setIncident] = useState<IncidentView | null>(null);
@@ -73,12 +76,8 @@ function WatchApp({ brain, registry, demo }: WatchAppProps): ReactElement {
     return () => clearInterval(timer);
   }, [registry]);
 
-  // In demo mode, reveal the canned incident once the failure has "happened".
-  useEffect(() => {
-    if (!demo) return;
-    const timer = setTimeout(() => setIncident(DEMO_INCIDENT), 5200);
-    return () => clearTimeout(timer);
-  }, [demo]);
+  // Show the most recent incident (from the real pipeline, or the demo source).
+  useEffect(() => subscribeIncidents(setIncident), [subscribeIncidents]);
 
   return (
     <Dashboard
@@ -121,6 +120,27 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
     detachPersistence = attachEventPersistence(db);
   }
 
+  // The incident pipeline correlates events → analysis. Real mode only (demo uses
+  // a canned incident; analysis needs a brain + db anyway).
+  let pipeline: IncidentPipeline | null = null;
+  let detachPipeline: (() => void) | null = null;
+  if (!demo && db) {
+    pipeline = new IncidentPipeline({
+      brain,
+      db,
+      reportsDir: reportsDirFor(config),
+      brainLabel: brain.kind ? `${config.brain.model} via ${brain.kind}` : undefined,
+    });
+    detachPipeline = pipeline.attach();
+  }
+
+  const subscribeIncidents: SubscribeIncidents = demo
+    ? (cb) => {
+        const timer = setTimeout(() => cb(DEMO_INCIDENT), 5200);
+        return () => clearTimeout(timer);
+      }
+    : (cb) => (pipeline ? pipeline.onIncident(cb) : () => {});
+
   const registry = demo ? new SensorRegistry().register(new DemoSensor()) : createSensorRegistry();
   const sensorsConfig = demo ? { demo: { enabled: true } } : config.sensors;
   await registry.startAll(sensorsConfig);
@@ -129,6 +149,7 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
   const shutdown = async () => {
     if (shuttingDown) return;
     shuttingDown = true;
+    detachPipeline?.();
     await registry.stopAll();
     detachPersistence?.();
     if (db) await closeDb(db);
@@ -145,7 +166,9 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
     return;
   }
 
-  const app = render(<WatchApp brain={brainStatus} registry={registry} demo={demo} />);
+  const app = render(
+    <WatchApp brain={brainStatus} registry={registry} subscribeIncidents={subscribeIncidents} />,
+  );
   const onSignal = () => {
     void shutdown().then(() => {
       app.unmount();
