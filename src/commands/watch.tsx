@@ -9,16 +9,21 @@ import { type ReactElement, useEffect, useState } from "react";
 import { Brain } from "../brain/index.js";
 import { bus } from "../core/bus.js";
 import { loadConfig } from "../core/config.js";
+import { closeDb, type DB, migrateToLatest, openDb } from "../core/db.js";
 import type { NormalizedEvent } from "../core/event.js";
+import { acquireLock, LockHeldError, releaseLock } from "../core/lock.js";
 import { createLogger } from "../core/logger.js";
+import { attachEventPersistence } from "../core/repo.js";
 import { Dashboard } from "../outputs/terminal/components/Dashboard.js";
 import type { BrainStatus, IncidentView } from "../outputs/terminal/types.js";
 import { DemoSensor } from "../sensors/demo/index.js";
 import { createSensorRegistry, type SensorHealth, SensorRegistry } from "../sensors/index.js";
+import { VERSION } from "../version.js";
+
+/** Port the daemon reserves (the web dashboard binds it in Session 9). */
+const DAEMON_PORT = 6660;
 
 const log = createLogger("watch");
-
-const VERSION = "0.1.0";
 
 export interface WatchOptions {
   demo?: boolean;
@@ -87,26 +92,52 @@ function WatchApp({ brain, registry, demo }: WatchAppProps): ReactElement {
 }
 
 export async function watchCommand(options: WatchOptions = {}): Promise<void> {
+  const demo = options.demo ?? false;
   const config = loadConfig();
 
   const brain = new Brain(config.brain);
   await brain.init();
   const brainStatus: BrainStatus = { kind: brain.kind, model: config.brain.model };
 
-  const registry = options.demo
-    ? new SensorRegistry().register(new DemoSensor())
-    : createSensorRegistry();
-  const sensorsConfig = options.demo ? { demo: { enabled: true } } : config.sensors;
+  // Real mode persists to SQLite and holds the single-instance lock. Demo mode is
+  // ephemeral — zero footprint, no lock — so it can run alongside a real daemon.
+  let db: DB | null = null;
+  let detachPersistence: (() => void) | null = null;
+  let locked = false;
 
+  if (!demo) {
+    try {
+      acquireLock(DAEMON_PORT);
+      locked = true;
+    } catch (err) {
+      if (err instanceof LockHeldError) {
+        process.stderr.write(`${err.message}\n`);
+        process.exit(1);
+      }
+      throw err;
+    }
+    db = openDb();
+    await migrateToLatest(db);
+    detachPersistence = attachEventPersistence(db);
+  }
+
+  const registry = demo ? new SensorRegistry().register(new DemoSensor()) : createSensorRegistry();
+  const sensorsConfig = demo ? { demo: { enabled: true } } : config.sensors;
   await registry.startAll(sensorsConfig);
 
+  let shuttingDown = false;
   const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     await registry.stopAll();
+    detachPersistence?.();
+    if (db) await closeDb(db);
+    if (locked) releaseLock();
   };
 
   // Headless (no TTY / --headless): sensors only, log to file, stay alive.
   if (options.headless || !process.stdout.isTTY) {
-    log.info(`postmortem watching (headless)${options.demo ? " · demo" : ""}`);
+    log.info(`postmortem watching (headless)${demo ? " · demo" : ""}`);
     process.stdout.write("☠ postmortem is watching (headless). ctrl+c to stop.\n");
     const onSignal = () => void shutdown().then(() => process.exit(0));
     process.on("SIGINT", onSignal);
@@ -114,9 +145,7 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
     return;
   }
 
-  const app = render(
-    <WatchApp brain={brainStatus} registry={registry} demo={options.demo ?? false} />,
-  );
+  const app = render(<WatchApp brain={brainStatus} registry={registry} demo={demo} />);
   const onSignal = () => {
     void shutdown().then(() => {
       app.unmount();
