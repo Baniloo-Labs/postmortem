@@ -66,7 +66,7 @@ Pin these majors. **Do not reintroduce the stale versions written in spec.md §1
 | Package | Use | Package | Use |
 |---|---|---|---|
 | node engines | `>=22` | better-sqlite3 | `^12` |
-| @anthropic-ai/sdk | `^0.105` | @types/better-sqlite3 | `^7.6` |
+| @anthropic-ai/sdk | `^0.111` | @types/better-sqlite3 | `^7.6` |
 | openai | `^6` | kysely | `^0.29` |
 | commander | `^15` | got | `^15` |
 | ink | `^7` | chokidar | `^5` |
@@ -77,9 +77,12 @@ Pin these majors. **Do not reintroduce the stale versions written in spec.md §1
 | cli-table3 | `^0.6.5` | typescript | `^6` |
 | smol-toml | `^1` (replaces unmaintained @iarna/toml) | vitest | `^4` |
 | @biomejs/biome | `^2` (lint+format) | msw | `^2` (dev, mock HTTP for sensor tests) |
+| @types/node | `^24` (matches Node 24 LTS) | ink-testing-library | `^4` (dev, Ink render tests) |
 
 - **Default model stays `claude-sonnet-4-6`** (cost-appropriate for a background watcher). Opus 4.8 (`claude-opus-4-8`) is available for deep analysis; expose via config, don't default to it.
 - When adding any dependency, confirm the latest with `npm view <pkg> version` and match the major here.
+- **TypeScript held at `^6` (as of 2026-07-11):** TS 7.x (the native compiler) is GA but deliberately not adopted mid-build — the tsup/vitest/biome toolchain is validated against TS 6 and ship-speed beats a compiler migration. Revisit post-1.0.
+- **`@anthropic-ai/sdk` bumped `0.105 → 0.111`:** the SDK moves fast and caret on a `0.x` locks the minor, so staying current required a real bump.
 
 ---
 
