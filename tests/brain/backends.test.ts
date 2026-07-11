@@ -11,14 +11,12 @@ const { anthropicCreate, openaiCreate } = vi.hoisted(() => ({
 vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
     messages = { create: anthropicCreate };
-    constructor(_opts: unknown) {}
   },
 }));
 
 vi.mock("openai", () => ({
   default: class {
     chat = { completions: { create: openaiCreate } };
-    constructor(_opts: unknown) {}
   },
 }));
 
