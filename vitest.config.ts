@@ -6,6 +6,8 @@ export default defineConfig({
     passWithNoTests: true,
     globals: false,
     environment: "node",
+    // Some suites cold-start Fastify or spawn git subprocesses; give them room.
+    testTimeout: 20_000,
     include: ["tests/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",

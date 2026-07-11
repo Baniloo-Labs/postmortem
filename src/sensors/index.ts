@@ -5,9 +5,11 @@
 import { createLogger } from "../core/logger.js";
 import type { BaseSensor } from "./base.js";
 import { GitSensor } from "./git/index.js";
+import { GitHubActionsSensor } from "./github-actions/index.js";
 import { HealthCheckSensor } from "./health-check/index.js";
 import { LogfileSensor } from "./logfile/index.js";
 import { VercelSensor } from "./vercel/index.js";
+import { WebhookSensor } from "./webhook/index.js";
 
 const log = createLogger("sensors");
 
@@ -92,13 +94,15 @@ export class SensorRegistry {
   }
 }
 
-/** The registry with the v1.0 sensors registered (webhook lands in S7b). */
+/** The registry with all v1.0 sensors registered. */
 export function createSensorRegistry(): SensorRegistry {
   return new SensorRegistry()
     .register(new GitSensor())
     .register(new LogfileSensor())
     .register(new VercelSensor())
-    .register(new HealthCheckSensor());
+    .register(new GitHubActionsSensor())
+    .register(new HealthCheckSensor())
+    .register(new WebhookSensor());
 }
 
 export type { SensorEvent, SensorHealthResult } from "./base.js";
