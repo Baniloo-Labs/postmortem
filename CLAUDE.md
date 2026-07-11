@@ -42,6 +42,7 @@ sensors ──emit NormalizedEvent──▶ bus ('mort:event') ──▶ ┌─ 
 - **Brain** (`src/brain/`) auto-detects a backend (claude CLI → ANTHROPIC_API_KEY → OPENAI_API_KEY → Ollama) and exposes one method: `ask(prompt): Promise<string>`.
 - **Actuators** (`src/actuators/`) are **stubs in v1** — ship the abstract base + registry only, no concrete actuators.
 - One Fastify server on `6660` serves webhooks + JSON API + SSE + the embedded dashboard. No second process.
+- **Amendment (2026-07-11, overrides spec §4):** the webhook receiver is a **route on the shared server** (`src/server/`, `POST /webhook/:source`), not a sensor class — Session 9 folded it in to realize "one process, one port". Inbound webhook events still enter through the same redact-validate-publish boundary (`publishEvent`) as every sensor. `[sensors.webhook]` config (enabled/secret) still controls it.
 
 ---
 

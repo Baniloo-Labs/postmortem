@@ -196,7 +196,7 @@ mort status                # sensor health, active brain, event counts
 mort history --last 7d     # browse past incidents
 mort hooks install         # add the pre-push risk gate
 mort setup                 # re-run the wizard
-mort config show           # inspect / edit config
+mort config show           # inspect config (secrets masked)
 ```
 
 <br/>
