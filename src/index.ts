@@ -7,7 +7,9 @@
 import { Command } from "commander";
 import { configCommand } from "./commands/config.js";
 import { historyCommand } from "./commands/history.js";
+import { hooksCommand } from "./commands/hooks.js";
 import { predictCommand } from "./commands/predict.js";
+import { setupCommand } from "./commands/setup.js";
 import { statusCommand } from "./commands/status.js";
 import { watchCommand } from "./commands/watch.js";
 import { VERSION } from "./version.js";
@@ -26,6 +28,13 @@ program
   .option("--headless", "run sensors only, without the terminal UI")
   .action(async (opts: { demo?: boolean; headless?: boolean }) => {
     await watchCommand(opts);
+  });
+
+program
+  .command("setup")
+  .description("interactive first-run wizard — configure brain, sensors, and hooks")
+  .action(async () => {
+    await setupCommand();
   });
 
 program
@@ -57,6 +66,14 @@ program
   .argument("[action]", "show | path", "show")
   .action((action: string) => {
     configCommand(action);
+  });
+
+program
+  .command("hooks")
+  .description("install or remove the git pre-push risk hook")
+  .argument("<action>", "install | uninstall")
+  .action((action: string) => {
+    process.exit(hooksCommand(action));
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
