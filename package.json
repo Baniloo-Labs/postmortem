@@ -1,10 +1,10 @@
 {
   "name": "@postmortem-cli/mort",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "postmortem ☠ — AI-powered ops intelligence for developers",
   "type": "module",
   "bin": {
-    "mort": "./dist/index.js"
+    "mort": "dist/index.js"
   },
   "engines": {
     "node": ">=22.0.0"
