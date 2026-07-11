@@ -1,0 +1,9 @@
+# Normalize line endings to LF in the repo (Biome formats with LF).
+# Prevents CRLF churn on Windows checkouts — postmortem's primary dev platform.
+* text=auto eol=lf
+
+# Binary / native artifacts — never touch line endings.
+*.node binary
+*.db binary
+*.png binary
+*.ico binary

@@ -106,6 +106,7 @@ Pin these majors. **Do not reintroduce the stale versions written in spec.md §1
 - **Webhook receiver:** verify HMAC signature when a secret is configured; reject otherwise.
 - **health-check sensor:** guard user-supplied URLs against SSRF (block internal/metadata addresses unless explicitly allowed); enforce timeout.
 - Dashboard responses set a restrictive CSP (the page is self-contained; only the JetBrains Mono font is external).
+- **No telemetry, ever.** No analytics, no update pings, no phone-home. Outbound calls are limited to enabled sensor APIs and the chosen brain backend. This is a headline product promise.
 
 ---
 
@@ -139,11 +140,28 @@ The user develops on Windows. Keep everything cross-platform:
 
 ---
 
-## Resilience
+## Resilience & storage
 
 - One sensor throwing must not crash the daemon — isolate each sensor's loop, log and surface as unhealthy in `sensor_health`.
 - API pollers use retry with backoff and **ETag/conditional requests** where supported (GitHub especially) to avoid rate limits.
 - Graceful shutdown on SIGINT/SIGTERM: stop sensors, flush, close db, release lock.
+- **SQLite in WAL mode + busy timeout** — `mort status`/`history`/`predict` run as a second process while the daemon holds the db.
+- **Retention:** prune `events` older than `storage.retention_days` (default 30) on start and daily. `incidents` are never pruned — they are the memory that makes `predict` valuable.
+- Report filenames are filesystem-safe on Windows: no `:` (`2026-06-23-1433.md`).
+
+---
+
+## v1.0 ship-fast scope (overrides spec §19 where they differ)
+
+Ship the smallest thing that delivers the loop: watch → detect → explain → predict. Deferred to **v1.1** (do not build in v1.0, do not delete from spec):
+- `mort mcp` — read-only MCP server over the SQLite db (incident history/events/predict for coding agents). Strategic: postmortem is the local ops-memory layer agents plug into. Read-only is a hard rule — no db writes, no actuator triggers via MCP.
+- Netlify sensor (Vercel poller is its template; use `/add-sensor`)
+- Auto-start units (launchd / systemd / Task Scheduler)
+- Slack / custom-webhook output
+- `mort config set`, `mort incident --since`, Ink-rendered setup wizard (v1.0 setup = plain prompts)
+- `ACTUATOR_SPEC.md` (code stubs still ship in v1.0)
+
+v1.0 **adds** (adoption-critical, in spec §18.5): `mort watch --demo` (fixture-replay incident, zero tokens), `predict` zero-history cold start, WAL + retention, no-telemetry promise.
 
 ---
 
@@ -156,3 +174,4 @@ Scaffolding/maintenance skills live in `.claude/skills/`. Use them instead of ha
 - `/review-conventions` — project-specific review checklist (branding, security, Zod boundaries)
 - `/gen-docs` — regenerate README / SENSOR_SPEC / ACTUATOR_SPEC / command reference from source
 - `/release` — version bump + changelog + publish checklist
+- `/spec-drift` — audit intent (spec.md/CLAUDE.md/Plan.md) vs reality (code/README/skills); run after every build session and before every release

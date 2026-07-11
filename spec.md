@@ -52,7 +52,7 @@ mort watch
 - Optional: `claude` binary in PATH (Claude Code) for free AI via your existing subscription
 - Windows users: a prebuilt `better-sqlite3` binary is used by default; if your platform has no prebuilt, Visual Studio Build Tools are required to compile it
 
-postmortem runs entirely on your machine. No cloud account, no server, no SaaS. Exactly like OpenClaw.
+postmortem runs entirely on your machine. No cloud account, no server, no SaaS, **no telemetry** — postmortem never phones home. The only network calls it ever makes are to the sensor APIs you enable and the brain backend you chose.
 
 ---
 
@@ -136,7 +136,7 @@ postmortem/                     ← repo name is postmortem
 │   │   ├── vercel/             # ★ PRIMARY SENSOR — most new-age devs deploy here
 │   │   │   ├── index.ts        # Vercel API poller + webhook receiver
 │   │   │   └── parser.ts       # Parse deployment logs, build output, error frames
-│   │   ├── netlify/            # ★ PRIMARY SENSOR — second most common deployment
+│   │   ├── netlify/            # v1.1 fast-follow — second most common deployment
 │   │   │   ├── index.ts        # Netlify API poller + webhook receiver
 │   │   │   └── parser.ts       # Parse deploy logs, function errors, build output
 │   │   ├── github-actions/
@@ -352,7 +352,7 @@ export class Brain {
 export class BrainNotConfiguredError extends Error {
   constructor() {
     super(`postmortem needs a brain. Configure one of:
-  Option 1 (recommended): Install Claude Code → curl -fsSL https://claude.ai/install.sh | bash && claude /login
+  Option 1 (recommended): Install Claude Code → npm install -g @anthropic-ai/claude-code && claude /login
   Option 2: export ANTHROPIC_API_KEY=sk-ant-...
   Option 3: export OPENAI_API_KEY=sk-...
   Option 4: Install Ollama → https://ollama.ai`);
@@ -452,8 +452,12 @@ timeout_seconds = 5
 
 [sensors.webhook]
 enabled = false
-port = 9119                 # postmortem listens for incoming webhooks here
-secret = ""                 # optional HMAC validation
+# No port here — webhooks arrive on the single Fastify server at 127.0.0.1:6660
+# (POST /webhook/:source). One process, one port.
+secret = ""                 # optional HMAC validation (reject unsigned requests when set)
+
+[storage]
+retention_days = 30         # prune events older than this; incidents are kept forever
 ```
 
 ---
@@ -505,20 +509,24 @@ CREATE INDEX idx_events_severity ON events(severity);
 CREATE INDEX idx_incidents_detected_at ON incidents(detected_at);
 ```
 
+**Storage rules (required):**
+- Open the db in **WAL mode with a busy timeout** — `mort status` / `mort history` / `mort predict` run in a *second process* while the daemon holds the db. Without WAL they'll hit `SQLITE_BUSY`.
+- **Retention:** prune `events` older than `storage.retention_days` (default 30) on daemon start and daily thereafter. `incidents` are kept forever — they are the product's memory and what makes `mort predict` smarter over time.
+- Report filenames must be **filesystem-safe on Windows**: no `:` — use `2026-06-23-1433.md`, never `2026-06-23-14:33.md`.
+
 ---
 
 ## 11. CLI Commands
 
 ### `mort setup`
-Interactive first-run wizard (Ink-rendered):
+First-run wizard. **v1.0: plain sequential prompts, not a full Ink UI** (the Ink-rendered wizard is v1.1 polish — the answers matter, not the chrome):
 1. Detect Claude Code binary → show auth status
 2. If not found: prompt for API key choice
-3. Walk through enabling sensors — Vercel token first, Netlify token second, git repo path, GitHub token optional
-4. Ask: "Start postmortem automatically on login? (recommended)" → installs launchd plist (macOS) or systemd unit (Linux)
-5. Ask: "Install git pre-push hook for automatic risk prediction?" → runs `mort hooks install`
-6. Write `~/.postmortem/config.toml`
-7. Run connectivity tests on each enabled sensor
-8. Show success screen: `mort watch` to start, `http://localhost:6660` for dashboard
+3. Walk through enabling sensors — Vercel token first, git repo path, GitHub token optional
+4. Ask: "Install git pre-push hook for automatic risk prediction?" → runs `mort hooks install`
+5. Write `~/.postmortem/config.toml`
+6. Run connectivity tests on each enabled sensor
+7. Show success screen: `mort watch` to start, `http://localhost:6660` for dashboard, and how to keep the daemon running (tmux / a background terminal — auto-start units land in v1.1)
 
 ### `mort watch`
 Primary command. Starts the full postmortem daemon:
@@ -530,6 +538,9 @@ Primary command. Starts the full postmortem daemon:
 6. Brain batches events every 30 seconds, analyzes if severity warrants
 7. On `mort:event` with severity `error` or `critical`: trigger immediate analysis
 8. Write incidents to SQLite, markdown report, stream to dashboard via SSE
+
+### `mort watch --demo`
+The 60-second wow, zero config. Starts the full real pipeline with a bundled **fixture-replay sensor** that plays a canned incident sequence (git push → vercel build fails → health check goes red) through the bus on a compressed timeline. Uses the real brain if one is configured; otherwise shows a canned analysis clearly labeled as sample output. No tokens, no setup — this is what the README gif records and what a skeptical dev runs before trusting postmortem with API keys.
 
 ### `mort hooks install`
 Installs a git pre-push hook in the current repo:
@@ -546,8 +557,8 @@ Removes the pre-push hook from the current repo.
 Manually trigger an incident analysis:
 ```
 mort incident --last 10m        # analyze last 10 minutes of events
-mort incident --since "14:30"   # analyze since a specific time
 ```
+(`--since "14:30"` deferred to v1.1 — `--last` covers the real use case.)
 
 ### `mort predict`
 Pre-deploy risk assessment — the hero command:
@@ -566,6 +577,8 @@ Recommendation: review middleware/session.ts before deploying.
 Confidence: medium
 ```
 
+**Cold start (required behavior):** with zero incident history, `mort predict` still runs — it risk-scores the diff alone and appends "no incident history yet · postmortem learns as it watches". It must never error, never block, and never feel useless on day one; the diff-only analysis is the floor, history makes it sharper.
+
 ### `mort status`
 Show current sensor health, brain backend, recent event counts, dashboard URL. Non-interactive.
 
@@ -580,10 +593,10 @@ mort history <incident-id>      # full incident detail
 
 ### `mort config`
 ```
-mort config show
-mort config set brain.backend claude-cli
-mort config sensor enable vercel
+mort config show                # print resolved config, secrets masked
+mort config path                # print the config file location
 ```
+(`config set` / `config sensor enable` deferred to v1.1 — the TOML file is human-readable; `mort setup` re-runs safely.)
 
 ---
 
@@ -751,7 +764,7 @@ stream.onmessage = (e) => {
 
 ---
 
-## 12. Terminal UI Design — Beautiful Like Claude Code
+## 12b. Terminal UI Design — Beautiful Like Claude Code
 
 **Philosophy:** postmortem's terminal UI is dark-first, information-dense but not cluttered, yellow on black. Like a warning light that never sleeps. The ☠ symbol is everywhere — it is the product.
 
@@ -829,15 +842,14 @@ export const theme = {
   // Special
   brain:      chalk.hex('#FFD93D'),   // yellow — AI output shares brand color
   sensor:     chalk.hex('#34D399'),   // emerald — sensor health indicators
-  raven:      chalk.hex('#FFD93D'),   // yellow raven in header
 };
 ```
 
 **Color rules Claude Code must follow:**
-- The raven logo is always rendered in `theme.primary` (yellow)
+- The ☠ logo is always rendered in `theme.primary` (yellow)
 - The word `mort` wherever it appears as a brand name is always yellow
 - Sensor names are emerald (`theme.sensor`)
-- AI-generated content (root cause, suggested action) is yellow (`theme.brain`) to signal "this came from the raven"
+- AI-generated content (root cause, suggested action) is yellow (`theme.brain`) to signal "this came from postmortem's brain"
 - Timestamps are always muted (`theme.timestamp`) — they are metadata, not content
 - Borders use near-black, never gray — keeps the dark aesthetic clean
 - Warning severity uses orange (`#FF922B`), never yellow — yellow is reserved for brand only
@@ -848,7 +860,7 @@ Colors noted in brackets — implement with Chalk theme values:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  [YELLOW] ◢█◣ mort v0.1.0         [GREEN] ● claude-sonnet-4-6  │
+│  [YELLOW] ☠ postmortem v0.1.0     [GREEN] ● claude-sonnet-4-6  │
 │  [MUTED]  watching 4 sensors      [MUTED] claude code · free   │
 ├──────────────────┬──────────────────────────────────────────────┤
 │  [LABEL] SENSORS │  [LABEL] EVENT STREAM                        │
@@ -878,12 +890,12 @@ The incident card border renders in **yellow** — it is the most important thin
 ║  [LABEL] Severity  [RED]   CRITICAL                              ║
 ║  [LABEL] Duration  [MUTED] ~4 minutes                            ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  [YELLOW] ◢█◣ ROOT CAUSE                                        ║  ← raven icon before AI content
+║  [YELLOW] ☠ ROOT CAUSE                                          ║  ← ☠ before AI content
 ║  [WHITE] The upgrade of axios from 1.6.2 → 1.7.0 introduced a   ║
 ║  [WHITE] breaking change in interceptor behavior. 3 tests fail.  ║
 ║  [WHITE] Pattern seen before: 2024-11-14.                        ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  [YELLOW] ◢█◣ SUGGESTED ACTION                                  ║
+║  [YELLOW] ☠ SUGGESTED ACTION                                    ║
 ║  [WHITE] Pin axios to 1.6.2 or update the 3 affected test files. ║
 ║  [WHITE] See: src/api/__tests__/interceptor.test.ts              ║
 ╠══════════════════════════════════════════════════════════════════╣
@@ -893,11 +905,11 @@ The incident card border renders in **yellow** — it is the most important thin
 ║  [MUTED] 14:31:44  [RED]   3 tests failed                        ║
 ║  [MUTED] 14:33:01  [RED]   build marked failed                   ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  [MUTED] postmortem → ~/.mort/postmortems/2026-06-23-14:33.md    ║
+║  [MUTED] postmortem → ~/.postmortem/reports/2026-06-23-1433.md   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**Key rule:** The small raven icon `◢█◣` appears before every piece of AI-generated content (root cause, suggested action, prediction) — visually signals "the raven said this."
+**Key rule:** The yellow ☠ appears before every piece of AI-generated content (root cause, suggested action, prediction) — visually signals "postmortem's brain said this."
 
 ### Startup Screen
 
@@ -1080,7 +1092,7 @@ export class VercelSensor extends BaseSensor {
 }
 ```
 
-### Netlify Sensor ★ Primary
+### Netlify Sensor (v1.1 fast-follow — reference implementation notes)
 
 ```typescript
 // src/sensors/netlify/index.ts
@@ -1264,6 +1276,8 @@ export abstract class BaseActuator {
 
 ## 18. Build Order for Claude Code
 
+> **Superseded:** the authoritative build order is `Plan.md` (which folds in the v1.0 scope cuts — no Netlify, no auto-start in v1.0). This section is kept for the per-session prompt wording only.
+
 Give Claude Code these sessions in order. Each session is self-contained.
 
 **Session 1 — Core foundation**
@@ -1317,20 +1331,33 @@ These cross-cutting decisions extend the spec and take precedence over any confl
 
 **`mort predict` exit codes** (the pre-push hook depends on these): `0` = pass (low/medium risk), `1` = warn but allow (high risk), `2` = block (critical risk).
 
+**Storage & long-running daemon.** SQLite opens in WAL mode with a busy timeout (CLI commands are a second process against the same db). Events older than `storage.retention_days` (default 30) are pruned on start and daily; incidents are kept forever. Report filenames are filesystem-safe on Windows (no `:`).
+
+**Adoption path (treat as product requirements).** `mort watch --demo` replays a bundled fixture incident through the real pipeline — the first-run wow requires no tokens and no config. `mort predict` works with zero history (diff-only analysis that says history is empty) — day one must never feel broken.
+
+**Privacy promise (invariant).** No telemetry, no analytics, no update pings. The only outbound network calls are the sensor APIs the user enabled and the brain backend they chose. This is a headline marketing claim — breaking it breaks the product.
+
 ---
 
 ## 19. What Ships in v1 vs v2
 
-### v1 Ships
-- Core event bus, normalized event schema, SQLite memory — runs entirely on your machine
+### v1.0 Ships (the cut that gets us to npm fastest)
+- Core event bus, normalized event schema, SQLite memory (WAL, 30-day event retention) — runs entirely on your machine
 - Brain: claude-cli (uses your Claude Code subscription free), anthropic-api, openai-api, ollama
-- Sensors: **vercel** ★, **netlify** ★, git, logfile, github-actions, health-check, webhook
+- Sensors: **vercel** ★, git, logfile, github-actions, health-check, webhook
 - Terminal UI: live ☠ dashboard, yellow incident cards, startup screen
 - **Web dashboard at `http://localhost:6660`** — dark, yellow, monospace, live event stream via SSE
-- Commands: mort watch, mort setup, mort status, mort history, mort incident, mort predict, mort hooks install/uninstall
-- Auto-start: launchd (macOS) and systemd (Linux), offered during mort setup
+- Commands: mort watch (`--headless`, `--demo`), mort setup (plain prompts), mort status, mort history, mort incident `--last`, mort predict (works from day one, zero history), mort hooks install/uninstall, mort config show/path
 - Outputs: terminal, markdown reports to `~/.postmortem/reports/`
 - Install: `npm install -g @postmortem-cli/mort`
+
+### v1.1 (fast-follow — weeks, not months; each is cheap once v1.0 exists)
+- **`mort mcp`** — a **read-only MCP server** over the SQLite db (stdio transport), exposing incident history, event queries, and `predict` to coding agents (Claude Code, Cursor). Positions postmortem as the local ops-memory layer agents plug into, not a competitor to them. Read-only: no tool may write to the db or trigger actuators.
+- **Netlify sensor** (via `/add-sensor` — the Vercel poller is the template)
+- Auto-start units: launchd (macOS), systemd user unit (Linux), Task Scheduler (Windows)
+- Slack / custom-webhook output for incident reports
+- `mort config set`, `mort incident --since`, Ink-rendered setup wizard
+- `ACTUATOR_SPEC.md` (the code stubs ship in v1.0; the community authoring guide waits until there's a community)
 
 ### v2 (community + roadmap)
 - Actuators: Slack, GitHub issues, rollback, PagerDuty

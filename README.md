@@ -84,13 +84,14 @@ Wire it into a git pre-push hook (`mort hooks install`) and postmortem becomes a
 
 ## Features
 
-- 🛰️ **Sensors, not agents** — watches Vercel ★, Netlify ★, GitHub Actions, git, log files, health endpoints, and inbound webhooks.
+- 🛰️ **Sensors, not agents** — watches Vercel ★, GitHub Actions, git, log files, health endpoints, and inbound webhooks. (Netlify lands in v1.1.)
 - 🧠 **Bring your own brain** — auto-detects Claude Code CLI → `ANTHROPIC_API_KEY` → `OPENAI_API_KEY` → local Ollama. Model-agnostic by design.
 - 🔮 **Pre-deploy prediction** — risk-scores your diff against your own incident history.
 - 🖥️ **Beautiful terminal UI** — live Ink dashboard, yellow incident cards, the ☠ before everything the AI says.
 - 🌐 **Local web dashboard** at `localhost:6660` — dark, yellow, monospace, live event stream over SSE. Zero build step, embedded in the binary.
 - 📝 **Markdown postmortems** — every incident written to `~/.postmortem/reports/`.
-- 🔒 **Local-first & private** — binds `127.0.0.1` only, redacts secrets before anything is stored or sent to AI.
+- 🔒 **Local-first & private** — binds `127.0.0.1` only, redacts secrets before anything is stored or sent to AI. **No telemetry, ever.**
+- ⚡ **Try it in 60 seconds** — `mort watch --demo` replays a canned incident through the real pipeline. No tokens, no config.
 - 🔌 **Extensible** — a clean `NormalizedEvent` contract and a stubbed actuator layer ready for v2.
 
 <br/>
@@ -161,13 +162,13 @@ Default model: `claude-sonnet-4-6`. Opus 4.8 selectable for deeper analysis.
 
 | Sensor | Watches | Status |
 |---|---|---|
-| **Vercel** ★ | deployments, build logs, error frames | v1 |
-| **Netlify** ★ | deploys, function errors, build output | v1 |
-| **GitHub Actions** | workflow runs, failure logs | v1 |
-| **git** | commits, pushes, branch changes | v1 |
-| **logfile** | `tail -f` + pattern matching | v1 |
-| **health-check** | endpoint status & latency | v1 |
-| **webhook** | anything that can POST | v1 |
+| **Vercel** ★ | deployments, build logs, error frames | v1.0 |
+| **GitHub Actions** | workflow runs, failure logs | v1.0 |
+| **git** | commits, pushes, branch changes | v1.0 |
+| **logfile** | `tail -f` + pattern matching | v1.0 |
+| **health-check** | endpoint status & latency | v1.0 |
+| **webhook** | anything that can POST | v1.0 |
+| **Netlify** | deploys, function errors, build output | v1.1 — fast follow |
 | Railway · Fly.io · Render · CloudWatch · GCP | — | v2 / community |
 
 <br/>
@@ -176,7 +177,8 @@ Default model: `claude-sonnet-4-6`. Opus 4.8 selectable for deeper analysis.
 
 ```bash
 mort watch                 # start the daemon + terminal dashboard + :6660
-mort watch --headless      # daemon only (no TTY) — used by auto-start
+mort watch --demo          # ⚡ instant demo — replays a canned incident, zero config
+mort watch --headless      # daemon only (no TTY)
 mort predict               # ⭐ risk-score the current diff before pushing
 mort incident --last 10m   # manually analyze recent events
 mort status                # sensor health, active brain, event counts
@@ -213,8 +215,11 @@ repo_path = "."
 
 ## Roadmap
 
-**v1 — shipping**
-Core event bus · SQLite memory · 4 AI backends · 7 sensors · terminal UI · web dashboard `:6660` · markdown reports · pre-deploy prediction · cross-platform auto-start.
+**v1.0 — shipping**
+Core event bus · SQLite memory · 4 AI backends · 6 sensors + demo replay · terminal UI · web dashboard `:6660` · markdown reports · pre-deploy prediction (works from day one).
+
+**v1.1 — fast follow**
+`mort mcp` — plug postmortem's incident memory into Claude Code/Cursor as an MCP server · Netlify sensor · auto-start on login (macOS/Linux/Windows) · Slack/webhook output · Ink setup wizard.
 
 **v2 — community + roadmap**
 Actuators (Slack, GitHub issues, rollback, PagerDuty) · more sensors · multi-repo awareness · a community sensor marketplace.
