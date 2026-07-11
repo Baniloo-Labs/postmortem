@@ -124,22 +124,33 @@ Sensors emit one normalized event shape. Nothing downstream cares where it came 
 
 ---
 
+## Try it in 60 seconds
+
+No account, no tokens, no config — the demo replays a real incident through the live UI:
+
+```bash
+npm install -g @postmortem-cli/mort@alpha
+mort watch --demo
+```
+
 ## Install
 
-> **Status:** building in public. The build roadmap is in [`Plan.md`](Plan.md); the full spec is in [`spec.md`](spec.md). The commands below are the v0.1 install UX.
+> **Status:** v1.0 feature-complete, published as an **alpha** on npm while it bakes. `npm i -g @postmortem-cli/mort@alpha`. The roadmap is in [`Plan.md`](Plan.md); the full spec is in [`spec.md`](spec.md).
 
 ```bash
 # Install postmortem
-npm install -g @postmortem-cli/mort
+npm install -g @postmortem-cli/mort@alpha
 
 # First run — interactive setup wizard
 mort setup
 
 # Start watching
-mort watch          # ☠ dashboard → http://localhost:6660
+mort watch          # ☠ dashboard → http://127.0.0.1:6660
 ```
 
 **Requirements:** Node.js 22+ (24 LTS recommended) · npm 10+ · optionally the `claude` CLI in your `PATH` for free AI via your existing subscription.
+
+> **Windows:** `better-sqlite3` ships prebuilt binaries for common platforms. If your setup has none, install the [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) (Desktop C++ workload) so it can compile on install.
 
 <br/>
 
@@ -230,7 +241,7 @@ Actuators (Slack, GitHub issues, rollback, PagerDuty) · more sensors · multi-r
 
 ## Contributing
 
-postmortem is built around two clean extension points: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. Authoring guides live in `docs/SENSOR_SPEC.md` and `docs/ACTUATOR_SPEC.md`.
+postmortem is built around two clean extension points: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. The authoring guide is [`docs/SENSOR_SPEC.md`](docs/SENSOR_SPEC.md) (the actuator guide arrives with concrete actuators in v1.1).
 
 Contributions welcome — open an issue or a PR at **[Baniloo-Labs/postmortem](https://github.com/Baniloo-Labs/postmortem)**.
 
