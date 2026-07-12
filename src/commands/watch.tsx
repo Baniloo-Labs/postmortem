@@ -16,6 +16,7 @@ import { acquireLock, LockHeldError, releaseLock } from "../core/lock.js";
 import { createLogger } from "../core/logger.js";
 import { attachEventPersistence } from "../core/repo.js";
 import { IncidentPipeline } from "../incidents/pipeline.js";
+import { createTelegramOutput, resolveTelegram } from "../outputs/telegram/index.js";
 import { Dashboard } from "../outputs/terminal/components/Dashboard.js";
 import { theme } from "../outputs/terminal/theme.js";
 import type { BrainStatus, IncidentView } from "../outputs/terminal/types.js";
@@ -159,6 +160,14 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
       brainLabel: brain.kind ? `${config.brain.model} via ${brain.kind}` : undefined,
     });
     detachPipeline = pipeline.attach();
+
+    // Telegram alerts: notify on each detected incident (best-effort).
+    const telegram = resolveTelegram(config.output.telegram);
+    if (telegram) {
+      const output = createTelegramOutput(telegram);
+      pipeline.onIncident((view) => output.notify(view));
+      log.info("telegram alerts enabled");
+    }
   }
 
   const subscribeIncidents: SubscribeIncidents = demo

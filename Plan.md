@@ -112,13 +112,15 @@ launchd user agent (macOS), systemd `--user` unit (Linux), and — after finding
 offer in `mort setup`. Pure unit renderers tested; Windows lifecycle verified
 live. Src in `src/autostart/`.
 
-**Session 14 — Telegram output** · v1.1
-`src/outputs/telegram/` — send incident alerts to a Telegram chat on
-`incident.detected` via a BotFather bot (Bot API `sendMessage`). Reuse the bot
-pattern OpenClaw uses; align the exact env var names (`TELEGRAM_BOT_TOKEN` /
-`TELEGRAM_CHAT_ID`) with OpenClaw at build time. Config `[output.telegram]`
-(enabled/bot_token/chat_id). Still a *notification* (observe), not an actuator
-(act). **No custom-webhook output.** Tests mock the Telegram HTTP with msw.
+**Session 14 — Telegram output** · v1.1 · ✅ **DONE** (unreleased)
+`src/outputs/telegram/` — sends an HTML alert to a Telegram chat on each
+incident via a BotFather bot (Bot API `sendMessage`), wired as a `pipeline
+.onIncident` listener (best-effort; logged, never fatal). Config
+`[output.telegram]` + env `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`;
+`TELEGRAM_API_BASE` for self-hosted Bot API. Bot-token redaction pattern added.
+Offered in `mort setup`. **No custom-webhook output.** Pure format + resolve
+tests, msw send test; verified live end-to-end (daemon → incident → alert). If
+OpenClaw uses different env var names, swap them — one-line change.
 
 **Session 15 — Command & UX polish** · v1.1
 `mort config set <key> <value>` (safe edits, secrets stay `0600`), `incident --since

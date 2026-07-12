@@ -30,6 +30,9 @@ export interface SetupAnswers extends BrainChoice {
   githubEnabled: boolean;
   githubToken?: string;
   githubRepos?: string[];
+  telegramEnabled: boolean;
+  telegramBotToken?: string;
+  telegramChatId?: string;
 }
 
 /** Apply just the brain choice to a config. Pure — used by setup and the watch gate. */
@@ -57,6 +60,10 @@ export function applySetupAnswers(base: Config, answers: SetupAnswers): Config {
   c.sensors["github-actions"].enabled = answers.githubEnabled;
   if (answers.githubToken) c.sensors["github-actions"].token = answers.githubToken;
   if (answers.githubRepos) c.sensors["github-actions"].repos = answers.githubRepos;
+
+  c.output.telegram.enabled = answers.telegramEnabled;
+  if (answers.telegramBotToken) c.output.telegram.bot_token = answers.telegramBotToken;
+  if (answers.telegramChatId) c.output.telegram.chat_id = answers.telegramChatId;
 
   return c;
 }
@@ -196,6 +203,20 @@ export async function setupCommand(): Promise<void> {
         : [];
     }
 
+    const telegramEnabled = await confirm(rl, "Send incident alerts to Telegram?", false);
+    let telegramBotToken: string | undefined;
+    let telegramChatId: string | undefined;
+    if (telegramEnabled) {
+      telegramBotToken =
+        (await ask(
+          rl,
+          "Telegram bot token from @BotFather (blank = TELEGRAM_BOT_TOKEN env)",
+          "",
+        )) || undefined;
+      telegramChatId =
+        (await ask(rl, "Telegram chat id (blank = TELEGRAM_CHAT_ID env)", "")) || undefined;
+    }
+
     const config = applySetupAnswers(loadConfig(), {
       ...brainChoice,
       gitRepoPath,
@@ -206,6 +227,9 @@ export async function setupCommand(): Promise<void> {
       githubEnabled,
       githubToken,
       githubRepos,
+      telegramEnabled,
+      telegramBotToken,
+      telegramChatId,
     });
     writeConfig(config);
     println();

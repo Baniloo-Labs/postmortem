@@ -90,6 +90,7 @@ Wire it into a git pre-push hook (`mort hooks install`) and postmortem becomes a
 - 🖥️ **Beautiful terminal UI** — live Ink dashboard, yellow incident cards, the ☠ before everything the AI says.
 - 🌐 **Local web dashboard** at `localhost:6660` — dark, yellow, monospace, live event stream over SSE. Zero build step, embedded in the binary.
 - 📝 **Markdown postmortems** — every incident written to `~/.postmortem/reports/`.
+- 📨 **Telegram alerts** — get a formatted incident alert in a Telegram chat via your own BotFather bot (v1.1).
 - 🔒 **Local-first & private** — binds `127.0.0.1` only, redacts secrets before anything is stored or sent to AI. **No telemetry, ever.**
 - ⚡ **Try it in 60 seconds** — `mort watch --demo` replays a canned incident through the real pipeline. No tokens, no config.
 - 🔌 **Extensible** — a clean `NormalizedEvent` contract and a stubbed actuator layer ready for v2.

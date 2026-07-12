@@ -7,6 +7,12 @@ land in minor releases.
 ## [Unreleased] — toward v1.1
 
 ### Added
+- **Telegram alerts** — on each detected incident, postmortem sends a formatted
+  alert to a Telegram chat via a BotFather bot (Bot API `sendMessage`, HTML). Enable
+  in `mort setup` or `[output.telegram]` (`bot_token`/`chat_id`, or the
+  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` env vars). `TELEGRAM_API_BASE` supports
+  self-hosted Bot API servers. A failed send is logged, never fatal; bot tokens are
+  redacted from logs. (No custom-webhook output — Telegram is the channel.)
 - **`mort autostart install|uninstall|status`** — run the daemon on login,
   cross-platform: a launchd user agent (macOS), a systemd `--user` unit (Linux),
   and a hidden Startup-folder launcher (Windows — no admin, no console window;

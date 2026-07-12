@@ -37,6 +37,9 @@ describe("applySetupAnswers", () => {
       githubEnabled: true,
       githubToken: "gtok",
       githubRepos: ["acme/app", "acme/api"],
+      telegramEnabled: true,
+      telegramBotToken: "123:abc",
+      telegramChatId: "-1001",
     });
 
     expect(c.brain.backend).toBe("anthropic-api");
@@ -48,6 +51,9 @@ describe("applySetupAnswers", () => {
     expect(c.sensors.netlify.token).toBe("ntok");
     expect(c.sensors["github-actions"].enabled).toBe(true);
     expect(c.sensors["github-actions"].repos).toEqual(["acme/app", "acme/api"]);
+    expect(c.output.telegram.enabled).toBe(true);
+    expect(c.output.telegram.bot_token).toBe("123:abc");
+    expect(c.output.telegram.chat_id).toBe("-1001");
   });
 
   it("defaults git repo path to '.' and leaves secrets unset when blank", () => {
@@ -57,6 +63,7 @@ describe("applySetupAnswers", () => {
       vercelEnabled: false,
       netlifyEnabled: false,
       githubEnabled: false,
+      telegramEnabled: false,
     });
     expect(c.sensors.git.repo_path).toBe(".");
     expect(c.brain.backend).toBe("auto");
@@ -81,6 +88,7 @@ describe("applySetupAnswers", () => {
       vercelEnabled: true,
       netlifyEnabled: false,
       githubEnabled: false,
+      telegramEnabled: false,
     });
     expect(base.brain.backend).toBe("auto");
     expect(base.sensors.vercel.enabled).toBe(false);

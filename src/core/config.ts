@@ -97,7 +97,14 @@ export const Config = z
       .object({
         // Defaults resolved lazily via reportsDirFor() so POSTMORTEM_HOME applies.
         reports_dir: z.string().optional(),
-        // Telegram alert output ([output.telegram]) is added in Session 14 (v1.1).
+        // Telegram incident alerts via a BotFather bot (secrets prefer env vars).
+        telegram: z
+          .object({
+            enabled: z.boolean().default(false),
+            bot_token: z.string().default(""), // from @BotFather, or TELEGRAM_BOT_TOKEN
+            chat_id: z.string().default(""), // target chat, or TELEGRAM_CHAT_ID
+          })
+          .prefault({}),
       })
       .prefault({}),
     storage: z

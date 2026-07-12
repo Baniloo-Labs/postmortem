@@ -56,6 +56,12 @@ const RULES: readonly RedactionRule[] = [
     replacement: `${PLACEHOLDER}:slack-token`,
   },
   {
+    // Telegram bot token: <digits>:<35-char base64ish> (from BotFather).
+    label: "telegram-bot-token",
+    pattern: /\b\d{6,}:[A-Za-z0-9_-]{30,}\b/g,
+    replacement: `${PLACEHOLDER}:telegram-token`,
+  },
+  {
     label: "aws-access-key",
     pattern: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
     replacement: `${PLACEHOLDER}:aws-key`,

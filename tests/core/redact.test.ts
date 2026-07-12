@@ -19,6 +19,13 @@ describe("redact", () => {
     expect(out).toContain("end");
   });
 
+  it("scrubs a Telegram bot token", () => {
+    const out = redact("bot 8123456789:AAH1a2b3c4d5e6f7g8h9i0jKlMnOpQrStUvWx to send");
+    expect(out).not.toContain("AAH1a2b3c4d5e6f7g8h9i0");
+    expect(out).toContain("[REDACTED]");
+    expect(out).toContain("to send");
+  });
+
   it("scrubs a JWT", () => {
     const jwt =
       "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
