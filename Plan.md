@@ -36,7 +36,7 @@ Per `spec.md` §4, unchanged, with these additions:
 
 And these v1.0 removals (deferred to v1.1 — see scope section):
 - `src/sensors/netlify/` — not built in v1.0.
-- `src/outputs/webhook/` — not built in v1.0.
+- `src/outputs/telegram/` — not built in v1.0 (Telegram alerts land in Session 14).
 - Auto-start units (launchd/systemd/Task Scheduler) — not built in v1.0.
 
 ---
@@ -112,10 +112,13 @@ launchd user agent (macOS), systemd `--user` unit (Linux), and — after finding
 offer in `mort setup`. Pure unit renderers tested; Windows lifecycle verified
 live. Src in `src/autostart/`.
 
-**Session 14 — Outputs: Slack / custom webhook** · v1.1
-`src/outputs/` — POST incident reports to Slack or a custom URL on
-`incident.detected`. Config `[output] webhook_url`. Still a *notification* (observe),
-not an actuator (act). Tests mock HTTP.
+**Session 14 — Telegram output** · v1.1
+`src/outputs/telegram/` — send incident alerts to a Telegram chat on
+`incident.detected` via a BotFather bot (Bot API `sendMessage`). Reuse the bot
+pattern OpenClaw uses; align the exact env var names (`TELEGRAM_BOT_TOKEN` /
+`TELEGRAM_CHAT_ID`) with OpenClaw at build time. Config `[output.telegram]`
+(enabled/bot_token/chat_id). Still a *notification* (observe), not an actuator
+(act). **No custom-webhook output.** Tests mock the Telegram HTTP with msw.
 
 **Session 15 — Command & UX polish** · v1.1
 `mort config set <key> <value>` (safe edits, secrets stay `0600`), `incident --since
@@ -131,7 +134,7 @@ before `execute()`. Config `[actuators.*]`, isolated like sensors (one throwing
 can't crash the daemon). This is what earns the 2.0 bump.
 
 **Session 17 — Concrete actuators** · v2.0
-`SlackActuator` (post to channel), `GitHubActuator` (open issue / comment on PR),
+`TelegramActuator` (post to a chat), `GitHubActuator` (open issue / comment on PR),
 `WebhookActuator` (POST anywhere), `PagerDutyActuator` (create alert), and the
 highest-stakes `RollbackActuator` (Vercel/Netlify rollback — most heavily gated).
 Each: `describe` + `execute` + config + tests. `ACTUATOR_SPEC.md` becomes real.
@@ -173,9 +176,9 @@ to support contributors.
 
 **v1.0** ✅ **SHIPPED (v1.0.1 on npm)** (ship-fast cut, per spec §19): core bus + event + SQLite (WAL, retention); brain (claude-cli/anthropic/openai/ollama); sensors vercel★/git/logfile/github-actions/health-check/webhook + demo replay; terminal UI; web dashboard `:6660`; commands watch(`--headless`/`--demo`)/setup/status/history/incident/predict/hooks/config-show; markdown reports; npm install. **Actuators stubbed only** (base + registry scaffold, no concrete actuators). See the post-1.0 roadmap above for the session-by-session v1.1 → v2.0 order.
 
-**v1.1** (fast-follow): `mort mcp` (read-only MCP server over the SQLite db — incident history + events + predict for coding agents); Netlify sensor (`/add-sensor`); auto-start units (launchd/systemd/Task Scheduler); Slack/webhook output; `config set`; `incident --since`; Ink setup wizard; `ACTUATOR_SPEC.md`.
+**v1.1** (fast-follow): `mort mcp` (read-only MCP server over the SQLite db — incident history + events + predict for coding agents); Netlify sensor (`/add-sensor`); auto-start units (launchd/systemd/Task Scheduler); Telegram output (BotFather bot, no custom-webhook); `config set`; `incident --since`; Ink setup wizard; `ACTUATOR_SPEC.md`.
 
-**v2:** concrete actuators (Slack, GitHub issues, rollback, PagerDuty); more sensors (Railway, Fly.io, Render, CloudWatch, GCP); multi-repo awareness; community sensor marketplace.
+**v2:** concrete actuators (Telegram, GitHub issues, rollback, PagerDuty); more sensors (Railway, Fly.io, Render, CloudWatch, GCP); multi-repo awareness; community sensor marketplace.
 
 ---
 

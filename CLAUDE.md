@@ -163,7 +163,7 @@ Ship the smallest thing that delivers the loop: watch → detect → explain →
 - `mort mcp` — read-only MCP server over the SQLite db (incident history/events/predict for coding agents). Strategic: postmortem is the local ops-memory layer agents plug into. Read-only is a hard rule — no db writes, no actuator triggers via MCP.
 - Netlify sensor (Vercel poller is its template; use `/add-sensor`)
 - Auto-start units (launchd / systemd / Task Scheduler)
-- Slack / custom-webhook output
+- Telegram output (BotFather bot; same pattern as OpenClaw) — no custom-webhook
 - `mort config set`, `mort incident --since`, Ink-rendered setup wizard (v1.0 setup = plain prompts)
 - `ACTUATOR_SPEC.md` (code stubs still ship in v1.0)
 

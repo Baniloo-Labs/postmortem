@@ -176,8 +176,8 @@ postmortem/                     ← repo name is postmortem
 │   │   │   │   └── Spinner.tsx         # Loading states
 │   │   ├── markdown/
 │   │   │   └── index.ts        # Write postmortem report .md files
-│   │   └── webhook/
-│   │       └── index.ts        # POST results to Slack / custom webhooks
+│   │   └── telegram/
+│   │       └── index.ts        # send incident alerts to a Telegram chat (BotFather bot)
 │   │
 │   └── commands/
 │       ├── watch.ts            # `mort watch` — start postmortem daemon
@@ -412,8 +412,12 @@ model = "llama3"
 
 [output]
 reports_dir = "~/.postmortem/reports"
-# Optional: POST incident reports to a webhook
-# webhook_url = "https://hooks.slack.com/services/..."
+
+# Optional: send incident alerts to a Telegram chat via a BotFather bot (v1.1).
+[output.telegram]
+enabled = false
+bot_token = ""              # from @BotFather — or set TELEGRAM_BOT_TOKEN env var
+chat_id = ""                # target chat — or set TELEGRAM_CHAT_ID env var
 
 [sensors.git]
 enabled = true
@@ -1197,7 +1201,7 @@ export abstract class BaseActuator {
 }
 
 // Future actuators (v2+):
-// - SlackActuator: post incident to channel
+// - TelegramActuator: post incident to a chat (v1.1 ships this as output already)
 // - GitHubActuator: open issue, comment on PR
 // - RollbackActuator: trigger a deploy rollback
 // - PagerDutyActuator: create alert
@@ -1355,12 +1359,12 @@ These cross-cutting decisions extend the spec and take precedence over any confl
 - **`mort mcp`** — a **read-only MCP server** over the SQLite db (stdio transport), exposing incident history, event queries, and `predict` to coding agents (Claude Code, Cursor). Positions postmortem as the local ops-memory layer agents plug into, not a competitor to them. Read-only: no tool may write to the db or trigger actuators.
 - **Netlify sensor** (via `/add-sensor` — the Vercel poller is the template)
 - Auto-start units: launchd (macOS), systemd user unit (Linux), Task Scheduler (Windows)
-- Slack / custom-webhook output for incident reports
+- Telegram output — send incident alerts to a chat via a BotFather bot (same bot pattern as OpenClaw). No custom-webhook output.
 - `mort config set`, `mort incident --since`, Ink-rendered setup wizard
 - `ACTUATOR_SPEC.md` (the code stubs ship in v1.0; the community authoring guide waits until there's a community)
 
 ### v2 (community + roadmap)
-- Actuators: Slack, GitHub issues, rollback, PagerDuty
+- Actuators: Telegram, GitHub issues, rollback, PagerDuty
 - Additional sensors: Railway, Fly.io, Render, CloudWatch, GCP Logging
 - Multi-repo / multi-project awareness
 - Sensor marketplace (community contributions)

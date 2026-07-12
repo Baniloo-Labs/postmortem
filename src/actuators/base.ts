@@ -1,6 +1,6 @@
 // Actuator architecture — STUB, ships in v1.0 as scaffold only (spec §16).
 // No concrete actuators exist yet; the abstraction ships so the seam is real and
-// v1.1+ actuators (Slack, GitHub issues, rollback, PagerDuty) plug in with zero
+// v2 actuators (Telegram, GitHub issues, rollback, PagerDuty) plug in with zero
 // changes to the pipeline. The community builds actuators; the harness is the
 // product.
 

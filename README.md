@@ -236,10 +236,10 @@ repo_path = "."
 Core event bus · SQLite memory · 4 AI backends · 6 sensors + demo replay · terminal UI · web dashboard `:6660` · markdown reports · pre-deploy prediction (works from day one).
 
 **v1.1 — fast follow**
-`mort mcp` — plug postmortem's incident memory into Claude Code/Cursor as an MCP server · Netlify sensor · auto-start on login (macOS/Linux/Windows) · Slack/webhook output · Ink setup wizard.
+`mort mcp` — plug postmortem's incident memory into Claude Code/Cursor as an MCP server · Netlify sensor · auto-start on login (macOS/Linux/Windows) · Telegram alerts · Ink setup wizard.
 
 **v2 — community + roadmap**
-Actuators (Slack, GitHub issues, rollback, PagerDuty) · more sensors · multi-repo awareness · a community sensor marketplace.
+Actuators (Telegram, GitHub issues, rollback, PagerDuty) · more sensors · multi-repo awareness · a community sensor marketplace.
 
 > **The community builds sensors and actuators. The harness is the product.**
 

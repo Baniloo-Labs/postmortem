@@ -97,7 +97,7 @@ export const Config = z
       .object({
         // Defaults resolved lazily via reportsDirFor() so POSTMORTEM_HOME applies.
         reports_dir: z.string().optional(),
-        webhook_url: z.url().optional(),
+        // Telegram alert output ([output.telegram]) is added in Session 14 (v1.1).
       })
       .prefault({}),
     storage: z
