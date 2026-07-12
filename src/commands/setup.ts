@@ -3,6 +3,7 @@
 // The config-building logic is a pure function so it can be tested without stdin.
 
 import { createInterface } from "node:readline/promises";
+import { isClaudeCliAvailable } from "../brain/backends/claude-cli.js";
 import { Brain } from "../brain/index.js";
 import { type Config, defaultConfig, loadConfig, writeConfig } from "../core/config.js";
 import { configFile } from "../core/paths.js";
@@ -13,10 +14,13 @@ import { println } from "./util.js";
 
 export type BrainBackendChoice = "auto" | "claude-cli" | "anthropic-api" | "openai-api" | "ollama";
 
-export interface SetupAnswers {
+export interface BrainChoice {
   brainBackend: BrainBackendChoice;
   anthropicKey?: string;
   openaiKey?: string;
+}
+
+export interface SetupAnswers extends BrainChoice {
   gitRepoPath: string;
   vercelEnabled: boolean;
   vercelToken?: string;
@@ -25,13 +29,18 @@ export interface SetupAnswers {
   githubRepos?: string[];
 }
 
+/** Apply just the brain choice to a config. Pure — used by setup and the watch gate. */
+export function applyBrainChoice(base: Config, choice: BrainChoice): Config {
+  const c = structuredClone(base);
+  c.brain.backend = choice.brainBackend;
+  if (choice.anthropicKey) c.brain.anthropic_api_key = choice.anthropicKey;
+  if (choice.openaiKey) c.brain.openai_api_key = choice.openaiKey;
+  return c;
+}
+
 /** Fold wizard answers into a validated Config. Pure — no I/O, unit-tested. */
 export function applySetupAnswers(base: Config, answers: SetupAnswers): Config {
-  const c = structuredClone(base);
-
-  c.brain.backend = answers.brainBackend;
-  if (answers.anthropicKey) c.brain.anthropic_api_key = answers.anthropicKey;
-  if (answers.openaiKey) c.brain.openai_api_key = answers.openaiKey;
+  const c = applyBrainChoice(base, answers);
 
   c.sensors.git.enabled = true;
   c.sensors.git.repo_path = answers.gitRepoPath || ".";
@@ -63,6 +72,66 @@ async function confirm(rl: Rl, question: string, fallback: boolean): Promise<boo
   return answer === "y" || answer === "yes";
 }
 
+/** Interactive brain picker. Claude Code is the recommended, free default. */
+async function chooseBrain(rl: Rl): Promise<BrainChoice> {
+  println(theme.label("Brain — how should postmortem explain incidents?"));
+  println(
+    `  ${theme.primary("[1]")} Claude Code   ${theme.muted("(recommended — free with your Claude subscription, no API key)")}`,
+  );
+  println(`  ${theme.primary("[2]")} Anthropic API key`);
+  println(`  ${theme.primary("[3]")} OpenAI API key`);
+  println(`  ${theme.primary("[4]")} Ollama        ${theme.muted("(local, offline)")}`);
+  println(`  ${theme.primary("[5]")} Auto-detect`);
+  const choice = await ask(rl, "Choose", "1");
+
+  if (choice === "2") {
+    const anthropicKey =
+      (await ask(rl, "Anthropic API key (blank = use ANTHROPIC_API_KEY env)", "")) || undefined;
+    return { brainBackend: "anthropic-api", anthropicKey };
+  }
+  if (choice === "3") {
+    const openaiKey =
+      (await ask(rl, "OpenAI API key (blank = use OPENAI_API_KEY env)", "")) || undefined;
+    return { brainBackend: "openai-api", openaiKey };
+  }
+  if (choice === "4") return { brainBackend: "ollama" };
+  if (choice === "5") return { brainBackend: "auto" };
+
+  // Default: Claude Code. Check it's installed; guide the user if not.
+  if (await isClaudeCliAvailable()) {
+    println(theme.success("  ✓ Claude Code detected — free analysis via your subscription."));
+  } else {
+    println(
+      theme.warning(
+        "  Claude Code isn't installed yet. Install it — postmortem then uses it automatically:",
+      ),
+    );
+    println(theme.muted("    npm install -g @anthropic-ai/claude-code && claude /login"));
+  }
+  return { brainBackend: "claude-cli" };
+}
+
+/**
+ * Ensure a brain is configured, prompting the user to pick one if not. Used by
+ * `mort watch` so nobody ends up watching with analysis silently disabled.
+ * Returns true if it wrote a config; false when there's no TTY to prompt on.
+ */
+export async function ensureBrainConfigured(): Promise<boolean> {
+  if (!process.stdin.isTTY) return false;
+  println();
+  println(theme.primary("postmortem needs a brain to explain incidents — let's set one up."));
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const choice = await chooseBrain(rl);
+    writeConfig(applyBrainChoice(loadConfig(), choice));
+    println(theme.success(`✓ saved to ${configFile()}`));
+    println();
+    return true;
+  } finally {
+    rl.close();
+  }
+}
+
 export async function setupCommand(): Promise<void> {
   println(SKULL.banner);
   println();
@@ -89,25 +158,8 @@ export async function setupCommand(): Promise<void> {
     }
     println();
 
-    const choice = await ask(
-      rl,
-      "Brain: [1] auto-detect  [2] Anthropic key  [3] OpenAI key  [4] Ollama",
-      "1",
-    );
-    let brainBackend: BrainBackendChoice = "auto";
-    let anthropicKey: string | undefined;
-    let openaiKey: string | undefined;
-    if (choice === "2") {
-      brainBackend = "anthropic-api";
-      anthropicKey =
-        (await ask(rl, "Anthropic API key (blank = use ANTHROPIC_API_KEY env)", "")) || undefined;
-    } else if (choice === "3") {
-      brainBackend = "openai-api";
-      openaiKey =
-        (await ask(rl, "OpenAI API key (blank = use OPENAI_API_KEY env)", "")) || undefined;
-    } else if (choice === "4") {
-      brainBackend = "ollama";
-    }
+    const brainChoice = await chooseBrain(rl);
+    println();
 
     const gitRepoPath = await ask(rl, "Git repo path to watch", ".");
 
@@ -132,9 +184,7 @@ export async function setupCommand(): Promise<void> {
     }
 
     const config = applySetupAnswers(loadConfig(), {
-      brainBackend,
-      anthropicKey,
-      openaiKey,
+      ...brainChoice,
       gitRepoPath,
       vercelEnabled,
       vercelToken,

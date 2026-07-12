@@ -17,11 +17,13 @@ import { createLogger } from "../core/logger.js";
 import { attachEventPersistence } from "../core/repo.js";
 import { IncidentPipeline } from "../incidents/pipeline.js";
 import { Dashboard } from "../outputs/terminal/components/Dashboard.js";
+import { theme } from "../outputs/terminal/theme.js";
 import type { BrainStatus, IncidentView } from "../outputs/terminal/types.js";
 import { DemoSensor } from "../sensors/demo/index.js";
 import { createSensorRegistry, type SensorHealth, SensorRegistry } from "../sensors/index.js";
 import { SERVER_HOST, SERVER_PORT, startServer } from "../server/index.js";
 import { VERSION } from "../version.js";
+import { ensureBrainConfigured } from "./setup.js";
 
 /** Port the daemon reserves and the dashboard/webhook server binds. */
 const DAEMON_PORT = SERVER_PORT;
@@ -94,10 +96,28 @@ function WatchApp({ brain, registry, subscribeIncidents }: WatchAppProps): React
 
 export async function watchCommand(options: WatchOptions = {}): Promise<void> {
   const demo = options.demo ?? false;
-  const config = loadConfig();
+  let config = loadConfig();
 
-  const brain = new Brain(config.brain);
+  let brain = new Brain(config.brain);
   await brain.init();
+
+  // Brain-first: real mode is about explaining incidents, so don't silently run
+  // with analysis disabled. If no brain is configured, walk the user through
+  // picking one (Claude Code is the free default) before starting the daemon.
+  if (!demo && !brain.isConfigured()) {
+    if (process.stdin.isTTY && process.stdout.isTTY) {
+      await ensureBrainConfigured();
+      config = loadConfig();
+      brain = new Brain(config.brain);
+      await brain.init();
+    }
+    if (!brain.isConfigured()) {
+      process.stdout.write(
+        `${theme.muted("☠ no brain configured — incident analysis is disabled. Run ")}${theme.primary("mort setup")}${theme.muted(" or install Claude Code (npm i -g @anthropic-ai/claude-code). Sensors still record events.")}\n`,
+      );
+    }
+  }
+
   const brainStatus: BrainStatus = { kind: brain.kind, model: config.brain.model };
 
   // Real mode persists to SQLite and holds the single-instance lock. Demo mode is

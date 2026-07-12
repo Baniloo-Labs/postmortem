@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HOOK_MARKER, isPostmortemHook, PRE_PUSH_SCRIPT } from "../../src/commands/hooks.js";
-import { applySetupAnswers } from "../../src/commands/setup.js";
+import { applyBrainChoice, applySetupAnswers } from "../../src/commands/setup.js";
 import { defaultConfig } from "../../src/core/config.js";
 
 describe("pre-push hook script", () => {
@@ -57,6 +57,15 @@ describe("applySetupAnswers", () => {
     expect(c.brain.backend).toBe("auto");
     expect(c.sensors.vercel.enabled).toBe(false);
     expect(c.brain.anthropic_api_key).toBeUndefined();
+  });
+
+  it("applyBrainChoice sets only the brain, leaving sensors untouched", () => {
+    const base = defaultConfig();
+    base.sensors.vercel.enabled = true; // pre-existing sensor config
+    const c = applyBrainChoice(base, { brainBackend: "claude-cli" });
+    expect(c.brain.backend).toBe("claude-cli");
+    expect(c.sensors.vercel.enabled).toBe(true); // preserved
+    expect(base.brain.backend).toBe("auto"); // input not mutated
   });
 
   it("does not mutate the input config", () => {
