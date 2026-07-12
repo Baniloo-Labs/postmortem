@@ -561,8 +561,8 @@ Removes the pre-push hook from the current repo.
 Manually trigger an incident analysis:
 ```
 mort incident --last 10m        # analyze last 10 minutes of events
+mort incident --since 14:30     # analyze since a clock time today (added v1.1)
 ```
-(`--since "14:30"` deferred to v1.1 — `--last` covers the real use case.)
 
 ### `mort predict`
 Pre-deploy risk assessment — the hero command:
@@ -599,8 +599,9 @@ mort history <incident-id>      # full incident detail
 ```
 mort config show                # print resolved config, secrets masked
 mort config path                # print the config file location
+mort config set <key> <value>   # edit a key safely (added v1.1)
 ```
-(`config set` / `config sensor enable` deferred to v1.1 — the TOML file is human-readable; `mort setup` re-runs safely.)
+(`mort doctor` (v1.1) diagnoses the whole setup in one shot. The TOML file is also human-readable; `mort setup` re-runs safely.)
 
 ---
 
@@ -1360,8 +1361,8 @@ These cross-cutting decisions extend the spec and take precedence over any confl
 - **Netlify sensor** (via `/add-sensor` — the Vercel poller is the template)
 - Auto-start units: launchd (macOS), systemd user unit (Linux), Task Scheduler (Windows)
 - Telegram output — send incident alerts to a chat via a BotFather bot (same bot pattern as OpenClaw). No custom-webhook output.
-- `mort config set`, `mort incident --since`, Ink-rendered setup wizard
-- `ACTUATOR_SPEC.md` (the code stubs ship in v1.0; the community authoring guide waits until there's a community)
+- `mort config set`, `mort incident --since`, `mort doctor` (built; the Ink-rendered setup wizard was deferred — plain prompts work, doctor was higher-value polish)
+- `ACTUATOR_SPEC.md` (authoring guide + v2.0 safety model)
 
 ### v2 (community + roadmap)
 - Actuators: Telegram, GitHub issues, rollback, PagerDuty
