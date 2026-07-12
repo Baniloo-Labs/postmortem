@@ -9,6 +9,7 @@ import { configCommand } from "./commands/config.js";
 import { historyCommand } from "./commands/history.js";
 import { hooksCommand } from "./commands/hooks.js";
 import { incidentCommand } from "./commands/incident.js";
+import { mcpCommand } from "./commands/mcp.js";
 import { predictCommand } from "./commands/predict.js";
 import { setupCommand } from "./commands/setup.js";
 import { statusCommand } from "./commands/status.js";
@@ -75,6 +76,13 @@ program
   .argument("[action]", "show | path", "show")
   .action((action: string) => {
     configCommand(action);
+  });
+
+program
+  .command("mcp")
+  .description("run a read-only MCP server over postmortem's incident memory (stdio)")
+  .action(async () => {
+    await mcpCommand();
   });
 
 program

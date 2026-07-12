@@ -4,6 +4,16 @@ All notable changes to `@postmortem-cli/mort` are documented here. This project
 follows [semantic versioning](https://semver.org); pre-1.0, breaking changes may
 land in minor releases.
 
+## [Unreleased] — toward v1.1
+
+### Added
+- **`mort mcp`** — a read-only [MCP](https://modelcontextprotocol.io) server
+  (stdio) that exposes postmortem's incident memory to coding agents (Claude
+  Code, Cursor, …). Tools: `list_incidents`, `get_incident`, `query_events`, and
+  `predict` (risk-score a diff against this project's history). Every tool is
+  annotated read-only — no db writes, no actuator triggers. This makes postmortem
+  the local ops-memory layer agents plug into.
+
 ## [1.0.1] — 2026-07-12
 
 ### Fixed

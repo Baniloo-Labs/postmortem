@@ -71,6 +71,28 @@ export async function recentEvents(db: DB, limit = 20): Promise<StoredEvent[]> {
     .execute();
 }
 
+export interface EventQuery {
+  limit?: number;
+  sinceIso?: string;
+  severity?: string;
+  source?: string;
+}
+
+/** Query recent events with optional filters (newest first). */
+export async function queryEvents(db: DB, filter: EventQuery = {}): Promise<StoredEvent[]> {
+  let query = db
+    .selectFrom("events")
+    .select(["id", "timestamp", "source", "type", "severity", "summary"])
+    .orderBy("timestamp", "desc");
+
+  if (filter.sinceIso) query = query.where("timestamp", ">=", filter.sinceIso);
+  if (filter.severity) query = query.where("severity", "=", filter.severity);
+  if (filter.source) query = query.where("source", "=", filter.source);
+  query = query.limit(filter.limit ?? 50);
+
+  return query.execute();
+}
+
 /** Full events since a cutoff (chronological), reconstructed as NormalizedEvents. */
 export async function getEventsSince(db: DB, sinceIso: string): Promise<NormalizedEvent[]> {
   const rows = await db

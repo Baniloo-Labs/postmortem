@@ -197,7 +197,12 @@ mort history --last 7d     # browse past incidents
 mort hooks install         # add the pre-push risk gate
 mort setup                 # re-run the wizard
 mort config show           # inspect config (secrets masked)
+mort mcp                   # read-only MCP server — plug your incident memory into an agent
 ```
+
+### Plug postmortem into your coding agent 🔌
+
+`mort mcp` runs a read-only [MCP](https://modelcontextprotocol.io) server over stdio, so Claude Code / Cursor can query your incident history while they work — `list_incidents`, `get_incident`, `query_events`, and `predict` (risk-score a diff against your own past outages). Read-only by design: agents read the memory, they don't pull levers. Point your MCP client at the command `mort mcp`.
 
 <br/>
 

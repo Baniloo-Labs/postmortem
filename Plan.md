@@ -90,12 +90,13 @@ command polish) ship as **v1.x** point releases — non-breaking, observe-only.
 *explains* into one that *acts*, which is a fundamental shift and warrants the major
 bump. Each session still ends green and runs `/spec-drift` before merge.
 
-**Session 11 — `mort mcp` (read-only MCP server)** · v1.1 · _highest strategic value_
+**Session 11 — `mort mcp` (read-only MCP server)** · v1.1 · ✅ **DONE** (unreleased)
 A stdio MCP server over the SQLite db so coding agents (Claude Code, Cursor) can
 query postmortem's memory: `list_incidents`, `get_incident`, `query_events`,
 `predict`. **Read-only is a hard rule** — no db writes, no actuator triggers via
-MCP. Scaffold the `mcp` subcommand with `/add-command`. This makes postmortem the
-local ops-memory layer agents plug into.
+MCP. Built on `@modelcontextprotocol/sdk` (`McpServer.registerTool`, `readOnlyHint`),
+tool logic isolated in `src/mcp/tools.ts` (tested against a real db), the SDK
+lazy-imported so it doesn't load for other commands. Verified over stdio JSON-RPC.
 
 **Session 12 — Netlify sensor** · v1.1
 Via `/add-sensor` (the Vercel poller is the template): `deploy.started/succeeded/

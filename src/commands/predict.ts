@@ -35,8 +35,9 @@ async function git(args: string[]): Promise<string> {
   }
 }
 
-/** Uncommitted changes vs HEAD, falling back to the most recent commit. */
-async function gatherDiff(): Promise<string> {
+/** Uncommitted changes vs HEAD, falling back to the most recent commit. Shared
+ *  with the MCP `predict` tool. */
+export async function gatherDiff(): Promise<string> {
   const working = await git(["diff", "HEAD"]);
   if (working.trim()) return working;
   return git(["diff", "HEAD~1", "HEAD"]);

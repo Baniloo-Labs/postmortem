@@ -79,6 +79,7 @@ Pin these majors. **Do not reintroduce the stale versions written in spec.md §1
 | smol-toml | `^1` (replaces unmaintained @iarna/toml) | vitest | `^4` |
 | @biomejs/biome | `^2` (lint+format) | msw | `^2` (dev, mock HTTP for sensor tests) |
 | @types/node | `^24` (matches Node 24 LTS) | ink-testing-library | `^4` (dev, Ink render tests) |
+| @modelcontextprotocol/sdk | `^1.29` (v1.1 `mort mcp`) | | |
 
 - **Default model stays `claude-sonnet-4-6`** (cost-appropriate for a background watcher). Opus 4.8 (`claude-opus-4-8`) is available for deep analysis; expose via config, don't default to it.
 - When adding any dependency, confirm the latest with `npm view <pkg> version` and match the major here.
