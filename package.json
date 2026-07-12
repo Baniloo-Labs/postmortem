@@ -1,6 +1,6 @@
 {
   "name": "@postmortem-cli/mort",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "postmortem ☠ — AI-powered ops intelligence for developers",
   "type": "module",
   "bin": {

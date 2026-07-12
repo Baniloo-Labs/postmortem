@@ -4,6 +4,17 @@ All notable changes to `@postmortem-cli/mort` are documented here. This project
 follows [semantic versioning](https://semver.org); pre-1.0, breaking changes may
 land in minor releases.
 
+## [1.0.1] — 2026-07-12
+
+### Fixed
+- **Claude Code brain now works on Windows.** `claude` is a `.cmd`/`.ps1` shim on
+  Windows, which Node can't launch directly — so `mort setup` reported "Claude
+  Code isn't installed" even when it was, and analysis calls would have failed
+  with ENOENT. The CLI now runs through the shell on Windows (as a single command
+  string, avoiding the DEP0190 args-with-shell warning; the model is validated to
+  a safe charset so there's no injection surface). Verified end-to-end against a
+  real `claude` install: detection and a live `claude -p` call both succeed.
+
 ## [1.0.0] — 2026-07-12
 
 First stable release. The full **watch → detect → explain → predict** loop,
@@ -94,5 +105,6 @@ end-to-end. Published under the `alpha` tag while it bakes.
 units (launchd/systemd/Task Scheduler), Slack/webhook output, `config set`,
 `incident --since`, Ink-rendered setup wizard, `ACTUATOR_SPEC.md`.
 
+[1.0.1]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.0.0
 [0.1.0-alpha.1]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v0.1.0-alpha.1
