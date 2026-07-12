@@ -4,7 +4,12 @@ All notable changes to `@postmortem-cli/mort` are documented here. This project
 follows [semantic versioning](https://semver.org); pre-1.0, breaking changes may
 land in minor releases.
 
-## [Unreleased] — toward v1.1
+## [1.1.0] — 2026-07-12
+
+The agents-and-alerts release. postmortem's incident memory is now queryable by
+coding agents over MCP, it can alert you on Telegram, run on login, watch Netlify,
+and it grew a handful of quality-of-life commands. All additive and non-breaking
+over 1.0.
 
 ### Added
 - **`mort config set <key> <value>`** — edit a config key safely (dotted path, JSON
@@ -139,6 +144,7 @@ end-to-end. Published under the `alpha` tag while it bakes.
 units (launchd/systemd/Task Scheduler), Slack/webhook output, `config set`,
 `incident --since`, Ink-rendered setup wizard, `ACTUATOR_SPEC.md`.
 
+[1.1.0]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.1.0
 [1.0.1]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.0.0
 [0.1.0-alpha.1]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v0.1.0-alpha.1
