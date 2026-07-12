@@ -4,7 +4,14 @@ All notable changes to `@postmortem-cli/mort` are documented here. This project
 follows [semantic versioning](https://semver.org); pre-1.0, breaking changes may
 land in minor releases.
 
-## [Unreleased] — hardening toward 1.0
+## [1.0.0] — 2026-07-12
+
+First stable release. The full **watch → detect → explain → predict** loop,
+proven end-to-end: a real brain driving the real pipeline into a real database
+and markdown report, across git / logfile / Vercel / GitHub Actions / health-check
+sensors and inbound webhooks, with a live terminal UI and a local web dashboard.
+Local-first, model-agnostic, no telemetry. Everything in `0.1.0-alpha.1` below,
+plus the following since the alphas:
 
 ### Added
 - **Claude Code as an explicit, recommended brain** in `mort setup` (option `[1]`,
@@ -87,4 +94,5 @@ end-to-end. Published under the `alpha` tag while it bakes.
 units (launchd/systemd/Task Scheduler), Slack/webhook output, `config set`,
 `incident --since`, Ink-rendered setup wizard, `ACTUATOR_SPEC.md`.
 
+[1.0.0]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v1.0.0
 [0.1.0-alpha.1]: https://github.com/Baniloo-Labs/postmortem/releases/tag/v0.1.0-alpha.1

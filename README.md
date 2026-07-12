@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-FFD93D.svg?style=for-the-badge&labelColor=0D0D0D)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-51CF66.svg?style=for-the-badge&labelColor=0D0D0D)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-74C0FC.svg?style=for-the-badge&labelColor=0D0D0D)](https://www.typescriptlang.org/)
-[![Status](https://img.shields.io/badge/status-building%20in%20public-FF922B.svg?style=for-the-badge&labelColor=0D0D0D)](Plan.md)
+[![Version](https://img.shields.io/badge/version-1.0.0-FFD93D.svg?style=for-the-badge&labelColor=0D0D0D)](CHANGELOG.md)
 
 <br/>
 
@@ -129,17 +129,17 @@ Sensors emit one normalized event shape. Nothing downstream cares where it came 
 No account, no tokens, no config — the demo replays a real incident through the live UI:
 
 ```bash
-npm install -g @postmortem-cli/mort@alpha
+npm install -g @postmortem-cli/mort
 mort watch --demo
 ```
 
 ## Install
 
-> **Status:** v1.0 feature-complete, published as an **alpha** on npm while it bakes. `npm i -g @postmortem-cli/mort@alpha`. The roadmap is in [`Plan.md`](Plan.md); the full spec is in [`spec.md`](spec.md).
+> **Status:** v1.0 — the full watch → detect → explain → predict loop, proven end-to-end. The roadmap is in [`Plan.md`](Plan.md); the full spec is in [`spec.md`](spec.md).
 
 ```bash
 # Install postmortem
-npm install -g @postmortem-cli/mort@alpha
+npm install -g @postmortem-cli/mort
 
 # First run — interactive setup wizard
 mort setup
