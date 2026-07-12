@@ -1,12 +1,11 @@
-// postmortem ☠ — CLI entry point (bin: mort).
-//
-// Wired: watch (with --demo/--headless), status, history, predict, config.
-// Coming in the S6 follow-up: setup (plain prompts), hooks install/uninstall,
-// incident --last (needs the correlation pipeline).
+// postmortem ☠ — CLI entry point (bin: mort). Registers every subcommand:
+// watch, setup, status, doctor, history, incident, predict, config, mcp, hooks,
+// autostart.
 
 import { Command } from "commander";
 import { autostartCommand } from "./commands/autostart.js";
-import { configCommand } from "./commands/config.js";
+import { configCommand, configSetCommand } from "./commands/config.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { historyCommand } from "./commands/history.js";
 import { hooksCommand } from "./commands/hooks.js";
 import { incidentCommand } from "./commands/incident.js";
@@ -48,6 +47,13 @@ program
   });
 
 program
+  .command("doctor")
+  .description("diagnose setup: brain, daemon, db, reports, auto-start, telegram")
+  .action(async () => {
+    process.exit(await doctorCommand());
+  });
+
+program
   .command("history")
   .description("list past incidents")
   .option("--last <window>", "only incidents within a window, e.g. 7d, 24h, 30m")
@@ -60,7 +66,8 @@ program
   .command("incident")
   .description("analyze recent events into an incident")
   .option("--last <window>", "how far back to analyze, e.g. 10m, 1h", "10m")
-  .action(async (opts: { last?: string }) => {
+  .option("--since <time>", "analyze since a clock time today, e.g. 14:30")
+  .action(async (opts: { last?: string; since?: string }) => {
     process.exit(await incidentCommand(opts));
   });
 
@@ -73,9 +80,18 @@ program
 
 program
   .command("config")
-  .description("show config (secrets masked) or print its path")
-  .argument("[action]", "show | path", "show")
-  .action((action: string) => {
+  .description("show config, print its path, or set a key")
+  .argument("[action]", "show | path | set", "show")
+  .argument("[key]", "for set: dotted key, e.g. brain.model")
+  .argument("[value]", 'for set: the value (JSON-coerced: true, 30, "str")')
+  .action((action: string, key?: string, value?: string) => {
+    if (action === "set") {
+      if (!key || value === undefined) {
+        process.stderr.write("usage: mort config set <key> <value>\n");
+        process.exit(1);
+      }
+      process.exit(configSetCommand(key, value));
+    }
     configCommand(action);
   });
 

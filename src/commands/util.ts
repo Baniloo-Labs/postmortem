@@ -18,6 +18,18 @@ export function parseSince(spec: string, now: number = Date.now()): string | und
   return new Date(now - ms).toISOString();
 }
 
+/** Parse a clock time "HH:MM" (24h) into today's ISO cutoff (local). */
+export function parseClock(spec: string, now: number = Date.now()): string | undefined {
+  const match = spec.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return undefined;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return undefined;
+  const d = new Date(now);
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+}
+
 /** The theme color function for a severity string (unknown → muted). */
 export function severityTheme(severity: string): (s: string) => string {
   switch (severity) {

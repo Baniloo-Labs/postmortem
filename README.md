@@ -194,11 +194,14 @@ mort watch --headless      # daemon only (no TTY)
 mort predict               # ⭐ risk-score the current diff before pushing
 mort incident --last 10m   # manually analyze recent events
 mort status                # sensor health, active brain, event counts
+mort doctor                # diagnose your setup in one shot
 mort history --last 7d     # browse past incidents
+mort incident --since 14:30 # analyze events since a clock time today
 mort hooks install         # add the pre-push risk gate
 mort autostart install     # run the daemon on login (macOS/Linux/Windows, no admin)
 mort setup                 # re-run the wizard
 mort config show           # inspect config (secrets masked)
+mort config set brain.model claude-opus-4-8   # edit a config key safely
 mort mcp                   # read-only MCP server — plug your incident memory into an agent
 ```
 
@@ -248,7 +251,7 @@ Actuators (Telegram, GitHub issues, rollback, PagerDuty) · more sensors · mult
 
 ## Contributing
 
-postmortem is built around two clean extension points: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. The authoring guide is [`docs/SENSOR_SPEC.md`](docs/SENSOR_SPEC.md) (the actuator guide arrives with concrete actuators in v1.1).
+postmortem is built around two clean extension points: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. Authoring guides: [`docs/SENSOR_SPEC.md`](docs/SENSOR_SPEC.md) and [`docs/ACTUATOR_SPEC.md`](docs/ACTUATOR_SPEC.md) (concrete actuators land in v2.0).
 
 Contributions welcome — open an issue or a PR at **[Baniloo-Labs/postmortem](https://github.com/Baniloo-Labs/postmortem)**.
 

@@ -1,6 +1,6 @@
-// `mort incident --last <window>` — manually analyze recent events into an
-// incident. Reads the window's events from the db, runs the same pipeline the
-// daemon uses, persists the incident, and prints the card + report path.
+// `mort incident --last <window> | --since HH:MM` — manually analyze recent events
+// into an incident. Reads the window's events from the db, runs the same pipeline
+// the daemon uses, persists the incident, and prints the card + report path.
 
 import { Brain } from "../brain/index.js";
 import { loadConfig, reportsDirFor } from "../core/config.js";
@@ -10,16 +10,33 @@ import { IncidentPipeline } from "../incidents/pipeline.js";
 import type { Incident } from "../incidents/types.js";
 import { SKULL_GLYPH } from "../outputs/terminal/logo.js";
 import { theme } from "../outputs/terminal/theme.js";
-import { parseSince, println, severityTheme } from "./util.js";
+import { parseClock, parseSince, println, severityTheme } from "./util.js";
 
 export interface IncidentOptions {
   last?: string;
+  since?: string;
 }
 
 export async function incidentCommand(options: IncidentOptions = {}): Promise<number> {
-  const window = options.last ?? "10m";
-  const sinceIso = parseSince(window) ?? parseSince("10m");
-  if (!sinceIso) return 1;
+  // --since "14:30" (clock time today) wins over --last <window>.
+  let sinceIso: string | undefined;
+  let label: string;
+  if (options.since) {
+    sinceIso = parseClock(options.since);
+    if (!sinceIso) {
+      println(theme.error(`invalid --since time "${options.since}" — use HH:MM, e.g. 14:30`));
+      return 1;
+    }
+    label = `since ${options.since}`;
+  } else {
+    const window = options.last ?? "10m";
+    sinceIso = parseSince(window);
+    if (!sinceIso) {
+      println(theme.error(`invalid --last window "${window}" — use e.g. 10m, 6h, 7d`));
+      return 1;
+    }
+    label = `the last ${window}`;
+  }
 
   const config = loadConfig();
   const db = openDb();
@@ -27,7 +44,7 @@ export async function incidentCommand(options: IncidentOptions = {}): Promise<nu
   const events = await getEventsSince(db, sinceIso);
 
   if (events.length === 0) {
-    println(theme.muted(`no events in the last ${window} to analyze.`));
+    println(theme.muted(`no events ${label} to analyze.`));
     await closeDb(db);
     return 0;
   }
@@ -49,7 +66,7 @@ export async function incidentCommand(options: IncidentOptions = {}): Promise<nu
     brainLabel: `${config.brain.model} via ${brain.kind}`,
   });
 
-  println(theme.muted(`analyzing ${events.length} event(s) from the last ${window}…`));
+  println(theme.muted(`analyzing ${events.length} event(s) from ${label}…`));
   const incident = await pipeline.analyzeEvents(events);
   await closeDb(db);
 

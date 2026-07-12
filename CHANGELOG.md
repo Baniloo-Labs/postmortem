@@ -7,6 +7,15 @@ land in minor releases.
 ## [Unreleased] — toward v1.1
 
 ### Added
+- **`mort config set <key> <value>`** — edit a config key safely (dotted path, JSON
+  value coercion, Zod-validated, unknown keys rejected, secrets masked in output,
+  file stays `0600`).
+- **`mort incident --since <HH:MM>`** — analyze events since a clock time today (in
+  addition to `--last <window>`).
+- **`mort doctor`** — one-shot setup diagnostics: brain, daemon, db, reports,
+  auto-start, Telegram, config validity.
+- **`docs/ACTUATOR_SPEC.md`** — the actuator authoring guide (contract + the v2.0
+  safety model), ahead of concrete actuators.
 - **Telegram alerts** — on each detected incident, postmortem sends a formatted
   alert to a Telegram chat via a BotFather bot (Bot API `sendMessage`, HTML). Enable
   in `mort setup` or `[output.telegram]` (`bot_token`/`chat_id`, or the

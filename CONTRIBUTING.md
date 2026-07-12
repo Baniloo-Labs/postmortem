@@ -71,6 +71,6 @@ Don't hand-roll scaffolding — the repo ships Claude Code skills for the common
 
 ## The extension model
 
-postmortem is built around two clean seams: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. Authoring guides live in `docs/SENSOR_SPEC.md` (and `docs/ACTUATOR_SPEC.md`, arriving in v1.1).
+postmortem is built around two clean seams: the `NormalizedEvent` contract and the `BaseSensor` / `BaseActuator` abstractions. If you can write a poller, you can write a sensor. Authoring guides: `docs/SENSOR_SPEC.md` and `docs/ACTUATOR_SPEC.md` (concrete actuators land in v2.0).
 
 **The community builds sensors and actuators. The harness is the product.**

@@ -122,11 +122,13 @@ Offered in `mort setup`. **No custom-webhook output.** Pure format + resolve
 tests, msw send test; verified live end-to-end (daemon → incident → alert). If
 OpenClaw uses different env var names, swap them — one-line change.
 
-**Session 15 — Command & UX polish** · v1.1
-`mort config set <key> <value>` (safe edits, secrets stay `0600`), `incident --since
-"14:30"`, the Ink-rendered `setup` wizard (upgrade from plain prompts), and the
-`ACTUATOR_SPEC.md` authoring guide (ahead of the actuators themselves). Candidate:
-`mort doctor` (diagnose brain + sensors + config in one shot).
+**Session 15 — Command & UX polish** · v1.1 · ✅ **DONE** (unreleased)
+`mort config set <key> <value>` (dotted path, JSON coercion, Zod-validated,
+unknown-key detection, secrets masked, `0600`), `incident --since HH:MM`,
+`mort doctor` (setup diagnostics — built instead of the Ink wizard), and
+`docs/ACTUATOR_SPEC.md` (contract + v2.0 safety model). **Ink setup wizard
+deferred** — plain prompts work and the wizard is chrome; `doctor` was the
+higher-value polish. Live-verified all four.
 
 **Session 16 — Actuator framework + safety model** · v2.0 · _the major shift_
 Wire the actuator registry into the pipeline so, when warranted, an action can run.
@@ -178,7 +180,7 @@ to support contributors.
 
 **v1.0** ✅ **SHIPPED (v1.0.1 on npm)** (ship-fast cut, per spec §19): core bus + event + SQLite (WAL, retention); brain (claude-cli/anthropic/openai/ollama); sensors vercel★/git/logfile/github-actions/health-check/webhook + demo replay; terminal UI; web dashboard `:6660`; commands watch(`--headless`/`--demo`)/setup/status/history/incident/predict/hooks/config-show; markdown reports; npm install. **Actuators stubbed only** (base + registry scaffold, no concrete actuators). See the post-1.0 roadmap above for the session-by-session v1.1 → v2.0 order.
 
-**v1.1** (fast-follow): `mort mcp` (read-only MCP server over the SQLite db — incident history + events + predict for coding agents); Netlify sensor (`/add-sensor`); auto-start units (launchd/systemd/Task Scheduler); Telegram output (BotFather bot, no custom-webhook); `config set`; `incident --since`; Ink setup wizard; `ACTUATOR_SPEC.md`.
+**v1.1** (fast-follow — Sessions 11–15 built, unreleased): `mort mcp` (read-only MCP server); Netlify sensor; auto-start units (launchd/systemd/Startup); Telegram output (BotFather bot, no custom-webhook); `config set`; `incident --since`; `mort doctor`; `ACTUATOR_SPEC.md`. **Ink setup wizard deferred** (chrome over working plain prompts).
 
 **v2:** concrete actuators (Telegram, GitHub issues, rollback, PagerDuty); more sensors (Railway, Fly.io, Render, CloudWatch, GCP); multi-repo awareness; community sensor marketplace.
 

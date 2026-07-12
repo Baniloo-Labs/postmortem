@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { maskSecrets } from "../../src/commands/config.js";
+import { applyConfigSet, maskSecrets } from "../../src/commands/config.js";
 import { exitCodeForRisk } from "../../src/commands/predict.js";
-import { parseSince, severityTheme } from "../../src/commands/util.js";
+import { parseClock, parseSince, severityTheme } from "../../src/commands/util.js";
+import { defaultConfig } from "../../src/core/config.js";
 import { theme } from "../../src/outputs/terminal/theme.js";
 
 describe("exitCodeForRisk (pre-push hook contract)", () => {
@@ -35,6 +36,53 @@ describe("severityTheme", () => {
     expect(severityTheme("critical")).toBe(theme.critical);
     expect(severityTheme("warning")).toBe(theme.warning);
     expect(severityTheme("nonsense")).toBe(theme.muted);
+  });
+});
+
+describe("parseClock", () => {
+  const now = Date.parse("2026-07-12T20:00:00.000Z");
+  it("parses HH:MM into today's cutoff (local time)", () => {
+    const iso = parseClock("14:30", now);
+    expect(iso).toBeDefined();
+    const d = new Date(iso as string);
+    expect(d.getHours()).toBe(14);
+    expect(d.getMinutes()).toBe(30);
+  });
+  it("rejects invalid clock strings", () => {
+    expect(parseClock("25:00", now)).toBeUndefined();
+    expect(parseClock("14:99", now)).toBeUndefined();
+    expect(parseClock("2pm", now)).toBeUndefined();
+  });
+});
+
+describe("applyConfigSet", () => {
+  it("sets a string value and re-validates", () => {
+    const { config, applied } = applyConfigSet(defaultConfig(), "brain.model", "claude-opus-4-8");
+    expect(applied).toBe(true);
+    expect(config.brain.model).toBe("claude-opus-4-8");
+  });
+
+  it("coerces booleans and numbers via JSON", () => {
+    const a = applyConfigSet(defaultConfig(), "sensors.vercel.enabled", "true");
+    expect(a.config.sensors.vercel.enabled).toBe(true);
+    const b = applyConfigSet(defaultConfig(), "storage.retention_days", "60");
+    expect(b.config.storage.retention_days).toBe(60);
+  });
+
+  it("throws on a value that fails schema validation", () => {
+    expect(() => applyConfigSet(defaultConfig(), "brain.backend", "telepathy")).toThrow();
+    expect(() => applyConfigSet(defaultConfig(), "storage.retention_days", "-5")).toThrow();
+  });
+
+  it("reports applied:false for an unknown key (Zod strips it)", () => {
+    expect(applyConfigSet(defaultConfig(), "brain.nonsense", "x").applied).toBe(false);
+    expect(applyConfigSet(defaultConfig(), "made.up.path", "x").applied).toBe(false);
+  });
+
+  it("does not mutate the input config", () => {
+    const base = defaultConfig();
+    applyConfigSet(base, "brain.model", "changed");
+    expect(base.brain.model).toBe("claude-sonnet-4-6");
   });
 });
 
