@@ -75,6 +75,73 @@ Fastify routes (`/`, `/api/events`, `/api/incidents[/:id]`, `/api/sensors`, `/ap
 **Session 10 — Hooks + docs + ship polish**
 `hooks install/uninstall` (portable pre-push, exits silently if daemon absent), README (`# postmortem ☠`, predict hero example, `mort watch --demo` as the try-it-first step, Windows build-tools note, no-telemetry promise), `SENSOR_SPEC.md`. Record the demo gif. Final lint/test/build pass, `/release` dry run. **Auto-start units and `ACTUATOR_SPEC.md` deferred to v1.1.**
 
+> **✅ Sessions 1–10 shipped as v1.0.0, patched to v1.0.1** (`@postmortem-cli/mort`,
+> `latest` tag). v1.0.1 fixed the Claude Code brain on Windows (`.cmd`/`.ps1` shims
+> need `shell:true` — see the cross-platform note in CLAUDE.md). The full loop is
+> proven end-to-end (live + automated `Brain(ollama)` → pipeline → db + report).
+
+---
+
+## Post-1.0 roadmap (v1.1 → v2.0)
+
+Semver note: the additive sessions below (MCP, sensors, outputs, auto-start,
+command polish) ship as **v1.x** point releases — non-breaking, observe-only.
+**Actuators are the v2.0 headline**: they change postmortem from a tool that
+*explains* into one that *acts*, which is a fundamental shift and warrants the major
+bump. Each session still ends green and runs `/spec-drift` before merge.
+
+**Session 11 — `mort mcp` (read-only MCP server)** · v1.1 · _highest strategic value_
+A stdio MCP server over the SQLite db so coding agents (Claude Code, Cursor) can
+query postmortem's memory: `list_incidents`, `get_incident`, `query_events`,
+`predict`. **Read-only is a hard rule** — no db writes, no actuator triggers via
+MCP. Scaffold the `mcp` subcommand with `/add-command`. This makes postmortem the
+local ops-memory layer agents plug into.
+
+**Session 12 — Netlify sensor** · v1.1
+Via `/add-sensor` (the Vercel poller is the template): `deploy.started/succeeded/
+failed`, `build.failed` + function errors on failure, prod=critical/preview=error.
+msw + fixture tests.
+
+**Session 13 — Auto-start on login** · v1.1
+launchd plist (macOS), systemd user unit (Linux), Task Scheduler / Startup shortcut
+(Windows) — all invoking `mort watch --headless`. `mort autostart install/uninstall`
++ an offer in `mort setup`. First-class Windows.
+
+**Session 14 — Outputs: Slack / custom webhook** · v1.1
+`src/outputs/` — POST incident reports to Slack or a custom URL on
+`incident.detected`. Config `[output] webhook_url`. Still a *notification* (observe),
+not an actuator (act). Tests mock HTTP.
+
+**Session 15 — Command & UX polish** · v1.1
+`mort config set <key> <value>` (safe edits, secrets stay `0600`), `incident --since
+"14:30"`, the Ink-rendered `setup` wizard (upgrade from plain prompts), and the
+`ACTUATOR_SPEC.md` authoring guide (ahead of the actuators themselves). Candidate:
+`mort doctor` (diagnose brain + sensors + config in one shot).
+
+**Session 16 — Actuator framework + safety model** · v2.0 · _the major shift_
+Wire the actuator registry into the pipeline so, when warranted, an action can run.
+**Safety is the whole design**: dry-run by default, explicit per-actuator opt-in,
+a confirmation/approval gate, and an audit trail. `describe()` is always shown
+before `execute()`. Config `[actuators.*]`, isolated like sensors (one throwing
+can't crash the daemon). This is what earns the 2.0 bump.
+
+**Session 17 — Concrete actuators** · v2.0
+`SlackActuator` (post to channel), `GitHubActuator` (open issue / comment on PR),
+`WebhookActuator` (POST anywhere), `PagerDutyActuator` (create alert), and the
+highest-stakes `RollbackActuator` (Vercel/Netlify rollback — most heavily gated).
+Each: `describe` + `execute` + config + tests. `ACTUATOR_SPEC.md` becomes real.
+
+**Session 18 — More sensors** · v2.0 / community
+Railway, Fly.io, Render, CloudWatch, GCP Logging via `/add-sensor`.
+
+**Session 19 — Multi-repo / multi-project awareness** · v2.0
+Watch several repos/projects at once; scope events + incidents per project; a
+project switcher in the dashboard.
+
+**Session 20 — Community & marketplace** · v2.0
+Third-party sensor/actuator plugin loading, a community marketplace, and the docs
+to support contributors.
+
 ---
 
 ## Spec gaps addressed in this build
@@ -99,7 +166,7 @@ Fastify routes (`/`, `/api/events`, `/api/incidents[/:id]`, `/api/sensors`, `/ap
 
 ## v1.0 / v1.1 / v2 scope
 
-**v1.0** (ship-fast cut, per spec §19): core bus + event + SQLite (WAL, retention); brain (claude-cli/anthropic/openai/ollama); sensors vercel★/git/logfile/github-actions/health-check/webhook + demo replay; terminal UI; web dashboard `:6660`; commands watch(`--headless`/`--demo`)/setup/status/history/incident/predict/hooks/config-show; markdown reports; npm install. **Actuators stubbed only.**
+**v1.0** ✅ **SHIPPED (v1.0.1 on npm)** (ship-fast cut, per spec §19): core bus + event + SQLite (WAL, retention); brain (claude-cli/anthropic/openai/ollama); sensors vercel★/git/logfile/github-actions/health-check/webhook + demo replay; terminal UI; web dashboard `:6660`; commands watch(`--headless`/`--demo`)/setup/status/history/incident/predict/hooks/config-show; markdown reports; npm install. **Actuators stubbed only** (base + registry scaffold, no concrete actuators). See the post-1.0 roadmap above for the session-by-session v1.1 → v2.0 order.
 
 **v1.1** (fast-follow): `mort mcp` (read-only MCP server over the SQLite db — incident history + events + predict for coding agents); Netlify sensor (`/add-sensor`); auto-start units (launchd/systemd/Task Scheduler); Slack/webhook output; `config set`; `incident --since`; Ink setup wizard; `ACTUATOR_SPEC.md`.
 

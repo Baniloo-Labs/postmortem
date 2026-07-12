@@ -141,6 +141,7 @@ The user develops on Windows. Keep everything cross-platform:
 - Auto-start: launchd plist (macOS), systemd user unit (Linux), **Task Scheduler / Startup (Windows)**.
 - git hooks: `.git/hooks/pre-push` must work on Windows (shebang script is fine via Git Bash; keep it portable).
 - `better-sqlite3` needs a native binary — rely on prebuilt binaries; document the build-tools fallback for Windows in the README.
+- **Spawning a PATH command that may be an npm/nvm shim (`.cmd`/`.ps1`) needs `shell: true` on Windows** — Node's `spawn` can't resolve or exec those directly (it ENOENTs). Pass a single command string (not an args array) to avoid the DEP0190 shell-args warning, and validate any interpolated value to a safe charset first. See `src/brain/backends/claude-cli.ts` (`claudeSpawnSpec`) — this bit the `claude` brain in v1.0.0 (fixed 1.0.1). Any future backend/sensor that shells out to a CLI must do the same.
 
 ---
 
