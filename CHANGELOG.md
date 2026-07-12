@@ -7,6 +7,11 @@ land in minor releases.
 ## [Unreleased] — toward v1.1
 
 ### Added
+- **`mort autostart install|uninstall|status`** — run the daemon on login,
+  cross-platform: a launchd user agent (macOS), a systemd `--user` unit (Linux),
+  and a hidden Startup-folder launcher (Windows — no admin, no console window;
+  Task Scheduler was avoided because it needs elevation). Offered during
+  `mort setup`. All invoke `mort watch --headless`.
 - **Netlify sensor** ★ — polls the Netlify API v1 per site for deploy state
   changes and emits `deploy.started/succeeded/failed` (production failures are
   critical, previews are errors), with the build error message carried on the

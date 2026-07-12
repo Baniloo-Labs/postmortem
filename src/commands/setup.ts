@@ -3,6 +3,7 @@
 // The config-building logic is a pure function so it can be tested without stdin.
 
 import { createInterface } from "node:readline/promises";
+import { createAutostart, defaultServiceSpec } from "../autostart/index.js";
 import { isClaudeCliAvailable } from "../brain/backends/claude-cli.js";
 import { Brain } from "../brain/index.js";
 import { type Config, defaultConfig, loadConfig, writeConfig } from "../core/config.js";
@@ -212,6 +213,11 @@ export async function setupCommand(): Promise<void> {
 
     if (await confirm(rl, "Install the git pre-push risk hook?", true)) {
       hooksInstall();
+    }
+
+    if (await confirm(rl, "Start postmortem automatically on login?", false)) {
+      const result = await createAutostart(defaultServiceSpec()).install();
+      println(result.ok ? theme.success(`✓ ${result.message}`) : theme.muted(result.message));
     }
   } finally {
     rl.close();

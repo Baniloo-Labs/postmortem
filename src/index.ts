@@ -5,6 +5,7 @@
 // incident --last (needs the correlation pipeline).
 
 import { Command } from "commander";
+import { autostartCommand } from "./commands/autostart.js";
 import { configCommand } from "./commands/config.js";
 import { historyCommand } from "./commands/history.js";
 import { hooksCommand } from "./commands/hooks.js";
@@ -91,6 +92,14 @@ program
   .argument("<action>", "install | uninstall")
   .action((action: string) => {
     process.exit(hooksCommand(action));
+  });
+
+program
+  .command("autostart")
+  .description("run the daemon on login (launchd / systemd / Task Scheduler)")
+  .argument("<action>", "install | uninstall | status")
+  .action(async (action: string) => {
+    process.exit(await autostartCommand(action));
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {

@@ -195,6 +195,7 @@ mort incident --last 10m   # manually analyze recent events
 mort status                # sensor health, active brain, event counts
 mort history --last 7d     # browse past incidents
 mort hooks install         # add the pre-push risk gate
+mort autostart install     # run the daemon on login (macOS/Linux/Windows, no admin)
 mort setup                 # re-run the wizard
 mort config show           # inspect config (secrets masked)
 mort mcp                   # read-only MCP server — plug your incident memory into an agent

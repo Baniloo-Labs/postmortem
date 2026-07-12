@@ -105,10 +105,12 @@ Per-site polling (resolves all sites when `site_ids` empty), dedup by deploy
 id+state, seed-without-replay, healthCheck. Added to `mort setup` (parity with
 Vercel) and `[sensors.netlify]` config. msw + parser tests.
 
-**Session 13 — Auto-start on login** · v1.1
-launchd plist (macOS), systemd user unit (Linux), Task Scheduler / Startup shortcut
-(Windows) — all invoking `mort watch --headless`. `mort autostart install/uninstall`
-+ an offer in `mort setup`. First-class Windows.
+**Session 13 — Auto-start on login** · v1.1 · ✅ **DONE** (unreleased)
+launchd user agent (macOS), systemd `--user` unit (Linux), and — after finding
+`schtasks /Create` needs elevation — a hidden Startup-folder `.vbs` on Windows
+(no admin, no console window). `mort autostart install/uninstall/status` + an
+offer in `mort setup`. Pure unit renderers tested; Windows lifecycle verified
+live. Src in `src/autostart/`.
 
 **Session 14 — Outputs: Slack / custom webhook** · v1.1
 `src/outputs/` — POST incident reports to Slack or a custom URL on
