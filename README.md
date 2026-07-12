@@ -174,12 +174,12 @@ Default model: `claude-sonnet-4-6`. Opus 4.8 selectable for deeper analysis.
 | Sensor | Watches | Status |
 |---|---|---|
 | **Vercel** ★ | deployments, build logs, error frames | v1.0 |
-| **GitHub Actions** | workflow runs, failure logs | v1.0 |
+| **Netlify** ★ | deploys, build failures, error messages | v1.1 |
+| **GitHub Actions** | workflow runs, failed steps | v1.0 |
 | **git** | commits, pushes, branch changes | v1.0 |
 | **logfile** | `tail -f` + pattern matching | v1.0 |
 | **health-check** | endpoint status & latency | v1.0 |
 | **webhook** | anything that can POST | v1.0 |
-| **Netlify** | deploys, function errors, build output | v1.1 — fast follow |
 | Railway · Fly.io · Render · CloudWatch · GCP | — | v2 / community |
 
 <br/>

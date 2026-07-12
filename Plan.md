@@ -98,10 +98,12 @@ MCP. Built on `@modelcontextprotocol/sdk` (`McpServer.registerTool`, `readOnlyHi
 tool logic isolated in `src/mcp/tools.ts` (tested against a real db), the SDK
 lazy-imported so it doesn't load for other commands. Verified over stdio JSON-RPC.
 
-**Session 12 — Netlify sensor** · v1.1
-Via `/add-sensor` (the Vercel poller is the template): `deploy.started/succeeded/
-failed`, `build.failed` + function errors on failure, prod=critical/preview=error.
-msw + fixture tests.
+**Session 12 — Netlify sensor** · v1.1 · ✅ **DONE** (unreleased)
+Modeled on the Vercel poller: `deploy.started/succeeded/failed`, error text from
+the deploy's `error_message`, prod (context=production)=critical / preview=error.
+Per-site polling (resolves all sites when `site_ids` empty), dedup by deploy
+id+state, seed-without-replay, healthCheck. Added to `mort setup` (parity with
+Vercel) and `[sensors.netlify]` config. msw + parser tests.
 
 **Session 13 — Auto-start on login** · v1.1
 launchd plist (macOS), systemd user unit (Linux), Task Scheduler / Startup shortcut

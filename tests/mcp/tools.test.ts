@@ -34,7 +34,11 @@ async function seedIncident(id: string, severity: string, title: string) {
   });
 }
 
-async function seedEvent(source: string, severity: string, summary: string) {
+async function seedEvent(
+  source: string,
+  severity: "info" | "warning" | "error" | "critical",
+  summary: string,
+) {
   await insertEvent(db, {
     id: randomUUID(),
     timestamp: new Date().toISOString(),

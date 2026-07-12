@@ -8,6 +8,7 @@ import { GitSensor } from "./git/index.js";
 import { GitHubActionsSensor } from "./github-actions/index.js";
 import { HealthCheckSensor } from "./health-check/index.js";
 import { LogfileSensor } from "./logfile/index.js";
+import { NetlifySensor } from "./netlify/index.js";
 import { VercelSensor } from "./vercel/index.js";
 
 const log = createLogger("sensors");
@@ -100,6 +101,7 @@ export function createSensorRegistry(): SensorRegistry {
     .register(new GitSensor())
     .register(new LogfileSensor())
     .register(new VercelSensor())
+    .register(new NetlifySensor())
     .register(new GitHubActionsSensor())
     .register(new HealthCheckSensor());
 }

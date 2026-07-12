@@ -24,6 +24,8 @@ export interface SetupAnswers extends BrainChoice {
   gitRepoPath: string;
   vercelEnabled: boolean;
   vercelToken?: string;
+  netlifyEnabled: boolean;
+  netlifyToken?: string;
   githubEnabled: boolean;
   githubToken?: string;
   githubRepos?: string[];
@@ -47,6 +49,9 @@ export function applySetupAnswers(base: Config, answers: SetupAnswers): Config {
 
   c.sensors.vercel.enabled = answers.vercelEnabled;
   if (answers.vercelToken) c.sensors.vercel.token = answers.vercelToken;
+
+  c.sensors.netlify.enabled = answers.netlifyEnabled;
+  if (answers.netlifyToken) c.sensors.netlify.token = answers.netlifyToken;
 
   c.sensors["github-actions"].enabled = answers.githubEnabled;
   if (answers.githubToken) c.sensors["github-actions"].token = answers.githubToken;
@@ -169,6 +174,13 @@ export async function setupCommand(): Promise<void> {
       vercelToken = (await ask(rl, "Vercel token (blank = use VERCEL_TOKEN env)", "")) || undefined;
     }
 
+    const netlifyEnabled = await confirm(rl, "Enable the Netlify sensor?", false);
+    let netlifyToken: string | undefined;
+    if (netlifyEnabled) {
+      netlifyToken =
+        (await ask(rl, "Netlify token (blank = use NETLIFY_TOKEN env)", "")) || undefined;
+    }
+
     const githubEnabled = await confirm(rl, "Enable the GitHub Actions sensor?", false);
     let githubToken: string | undefined;
     let githubRepos: string[] | undefined;
@@ -188,6 +200,8 @@ export async function setupCommand(): Promise<void> {
       gitRepoPath,
       vercelEnabled,
       vercelToken,
+      netlifyEnabled,
+      netlifyToken,
       githubEnabled,
       githubToken,
       githubRepos,

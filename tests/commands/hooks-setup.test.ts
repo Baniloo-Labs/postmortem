@@ -32,6 +32,8 @@ describe("applySetupAnswers", () => {
       gitRepoPath: "/work/app",
       vercelEnabled: true,
       vercelToken: "vtok",
+      netlifyEnabled: true,
+      netlifyToken: "ntok",
       githubEnabled: true,
       githubToken: "gtok",
       githubRepos: ["acme/app", "acme/api"],
@@ -42,6 +44,8 @@ describe("applySetupAnswers", () => {
     expect(c.sensors.git.repo_path).toBe("/work/app");
     expect(c.sensors.vercel.enabled).toBe(true);
     expect(c.sensors.vercel.token).toBe("vtok");
+    expect(c.sensors.netlify.enabled).toBe(true);
+    expect(c.sensors.netlify.token).toBe("ntok");
     expect(c.sensors["github-actions"].enabled).toBe(true);
     expect(c.sensors["github-actions"].repos).toEqual(["acme/app", "acme/api"]);
   });
@@ -51,6 +55,7 @@ describe("applySetupAnswers", () => {
       brainBackend: "auto",
       gitRepoPath: "",
       vercelEnabled: false,
+      netlifyEnabled: false,
       githubEnabled: false,
     });
     expect(c.sensors.git.repo_path).toBe(".");
@@ -74,6 +79,7 @@ describe("applySetupAnswers", () => {
       brainBackend: "ollama",
       gitRepoPath: "/x",
       vercelEnabled: true,
+      netlifyEnabled: false,
       githubEnabled: false,
     });
     expect(base.brain.backend).toBe("auto");

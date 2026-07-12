@@ -2,8 +2,7 @@
 // defaults. A token-bearing config file is written 0600 (owner-only). Secrets
 // prefer env vars — the file is a fallback, never the recommended home for a key.
 //
-// v1.0 sensor set: git, logfile, vercel, github-actions, health-check, webhook.
-// Netlify's config block arrives with its sensor in v1.1 (via /add-sensor).
+// Sensor set: git, logfile, vercel, netlify, github-actions, health-check, webhook.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -54,6 +53,14 @@ const SensorsConfig = z
         token: z.string().default(""),
         team_id: z.string().default(""),
         project_ids: z.array(z.string()).default([]),
+        poll_interval_seconds: pollInterval(30),
+      })
+      .prefault({}),
+    netlify: z
+      .object({
+        enabled: z.boolean().default(false),
+        token: z.string().default(""),
+        site_ids: z.array(z.string()).default([]),
         poll_interval_seconds: pollInterval(30),
       })
       .prefault({}),

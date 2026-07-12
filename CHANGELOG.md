@@ -7,6 +7,10 @@ land in minor releases.
 ## [Unreleased] — toward v1.1
 
 ### Added
+- **Netlify sensor** ★ — polls the Netlify API v1 per site for deploy state
+  changes and emits `deploy.started/succeeded/failed` (production failures are
+  critical, previews are errors), with the build error message carried on the
+  event. Enable it in `mort setup` or `[sensors.netlify]`.
 - **`mort mcp`** — a read-only [MCP](https://modelcontextprotocol.io) server
   (stdio) that exposes postmortem's incident memory to coding agents (Claude
   Code, Cursor, …). Tools: `list_incidents`, `get_incident`, `query_events`, and
