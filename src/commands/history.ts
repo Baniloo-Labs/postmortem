@@ -3,6 +3,7 @@
 
 import { closeDb, migrateToLatest, openDb } from "../core/db.js";
 import { listIncidents } from "../core/repo.js";
+import { formatDateTime } from "../outputs/terminal/format.js";
 import { SKULL, SKULL_GLYPH } from "../outputs/terminal/logo.js";
 import { theme } from "../outputs/terminal/theme.js";
 import { parseSince, println, severityTheme } from "./util.js";
@@ -33,7 +34,7 @@ export async function historyCommand(options: HistoryOptions = {}): Promise<void
 
   for (const incident of incidents) {
     const sev = severityTheme(incident.severity);
-    const when = incident.detected_at.slice(0, 16).replace("T", " ");
+    const when = formatDateTime(incident.detected_at);
     println(
       `  ${sev(incident.severity.toUpperCase().padEnd(8))} ${theme.timestamp(when)}  ${incident.title}`,
     );

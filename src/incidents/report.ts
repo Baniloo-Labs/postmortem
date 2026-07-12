@@ -16,7 +16,11 @@ export function reportFilename(detectedAtIso: string): string {
 }
 
 export function renderReport(incident: Incident): string {
-  const when = new Date(incident.detectedAt).toLocaleString();
+  const d = new Date(incident.detectedAt);
+  const p = (n: number) => String(n).padStart(2, "0");
+  const when = Number.isNaN(d.getTime())
+    ? incident.detectedAt
+    : `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   const lines: string[] = [];
 
   lines.push(`# ☠ Incident Report · ${when}`, "");

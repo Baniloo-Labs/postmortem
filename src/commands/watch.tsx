@@ -98,6 +98,22 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
   const demo = options.demo ?? false;
   let config = loadConfig();
 
+  // Single-instance lock FIRST (real mode) so a second `mort watch` fails fast
+  // with a clear "already running" message — before any brain prompts or db work.
+  let locked = false;
+  if (!demo) {
+    try {
+      acquireLock(DAEMON_PORT);
+      locked = true;
+    } catch (err) {
+      if (err instanceof LockHeldError) {
+        process.stderr.write(`${err.message}\n`);
+        process.exit(1);
+      }
+      throw err;
+    }
+  }
+
   let brain = new Brain(config.brain);
   await brain.init();
 
@@ -120,23 +136,12 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
 
   const brainStatus: BrainStatus = { kind: brain.kind, model: config.brain.model };
 
-  // Real mode persists to SQLite and holds the single-instance lock. Demo mode is
-  // ephemeral — zero footprint, no lock — so it can run alongside a real daemon.
+  // Real mode persists to SQLite (the lock is already held from above). Demo mode
+  // is ephemeral — no lock, no db — so it can run alongside a real daemon.
   let db: DB | null = null;
   let detachPersistence: (() => void) | null = null;
-  let locked = false;
 
   if (!demo) {
-    try {
-      acquireLock(DAEMON_PORT);
-      locked = true;
-    } catch (err) {
-      if (err instanceof LockHeldError) {
-        process.stderr.write(`${err.message}\n`);
-        process.exit(1);
-      }
-      throw err;
-    }
     db = openDb();
     await migrateToLatest(db);
     detachPersistence = attachEventPersistence(db);
@@ -179,6 +184,7 @@ export async function watchCommand(options: WatchOptions = {}): Promise<void> {
         brain: { kind: brain.kind, model: config.brain.model },
         getSensors: () => registry.getHealth(),
         startedAt: Date.now(),
+        webhookEnabled: wh.enabled,
         webhookSecret: wh.enabled
           ? wh.secret || process.env.POSTMORTEM_WEBHOOK_SECRET || undefined
           : undefined,

@@ -29,6 +29,7 @@ function deps(over: Partial<ServerDeps> = {}): ServerDeps {
     brain: { kind: "claude-cli", model: "claude-sonnet-4-6" },
     getSensors: () => [{ name: "git", healthy: true, message: "watching" }],
     startedAt: Date.now(),
+    webhookEnabled: true, // webhook route registered by default in these tests
     ...over,
   };
 }
@@ -172,6 +173,20 @@ describe("POST /webhook/:source", () => {
       payload: JSON.stringify({ type: "not.a.type" }),
     });
     expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it("is not registered when the webhook sensor is disabled (404)", async () => {
+    const app = createServer(deps({ webhookEnabled: false }));
+    const res = await app.inject({
+      method: "POST",
+      url: "/webhook/ci",
+      headers: JSON_HEADERS,
+      payload: JSON.stringify({ type: "deploy.failed" }),
+    });
+    expect(res.statusCode).toBe(404);
+    // The dashboard still works with webhooks off.
+    expect((await app.inject({ method: "GET", url: "/api/status" })).statusCode).toBe(200);
     await app.close();
   });
 });

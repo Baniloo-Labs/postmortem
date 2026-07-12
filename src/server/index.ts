@@ -29,6 +29,8 @@ export interface ServerDeps {
   brain: { kind: string | null; model: string };
   getSensors: () => SensorHealthView[];
   startedAt: number;
+  /** Register the webhook receiver only when the webhook sensor is enabled. */
+  webhookEnabled?: boolean;
   /** When set, webhook requests must carry a valid HMAC signature. */
   webhookSecret?: string;
 }
@@ -97,29 +99,33 @@ export function createServer(deps: ServerDeps): FastifyInstance {
     request.raw.on("close", unsubscribe);
   });
 
-  app.post("/webhook/:source", (request, reply) => {
-    const { source } = request.params as { source: string };
+  // Only expose the webhook receiver when the webhook sensor is enabled — a
+  // disabled webhook means no inbound events, even from a local process.
+  if (deps.webhookEnabled) {
+    app.post("/webhook/:source", (request, reply) => {
+      const { source } = request.params as { source: string };
 
-    if (deps.webhookSecret) {
-      const header =
-        request.headers["x-hub-signature-256"] ?? request.headers["x-postmortem-signature"];
-      const signature = Array.isArray(header) ? header[0] : header;
-      const raw = (request as { rawBody?: string }).rawBody ?? "";
-      if (!verifyHmac(deps.webhookSecret, raw, signature)) {
-        return reply.code(401).send({ error: "invalid or missing signature" });
+      if (deps.webhookSecret) {
+        const header =
+          request.headers["x-hub-signature-256"] ?? request.headers["x-postmortem-signature"];
+        const signature = Array.isArray(header) ? header[0] : header;
+        const raw = (request as { rawBody?: string }).rawBody ?? "";
+        if (!verifyHmac(deps.webhookSecret, raw, signature)) {
+          return reply.code(401).send({ error: "invalid or missing signature" });
+        }
       }
-    }
 
-    try {
-      publishEvent(webhookToEvent(source, request.body));
-      return reply.code(202).send({ ok: true });
-    } catch {
-      return reply.code(400).send({
-        error: "invalid event body — 'type' must be a known event type",
-        validTypes: VALID_EVENT_TYPES,
-      });
-    }
-  });
+      try {
+        publishEvent(webhookToEvent(source, request.body));
+        return reply.code(202).send({ ok: true });
+      } catch {
+        return reply.code(400).send({
+          error: "invalid event body — 'type' must be a known event type",
+          validTypes: VALID_EVENT_TYPES,
+        });
+      }
+    });
+  }
 
   return app;
 }

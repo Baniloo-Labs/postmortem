@@ -1,10 +1,18 @@
 // Small formatting helpers for the terminal UI. Pure functions, no rendering.
 
-/** Format an ISO timestamp as HH:MM:SS. Falls back to the input if unparseable. */
+/** Format an ISO timestamp as HH:MM:SS (local). Falls back to input if unparseable. */
 export function formatClock(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toTimeString().slice(0, 8);
+}
+
+/** Format an ISO timestamp as `YYYY-MM-DD HH:MM` in local time (unambiguous). */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /** A short, human relative age like "3h ago" / "just now". */
